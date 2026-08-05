@@ -1,0 +1,8 @@
+name = "ssf"
+pages_build_output_dir = "dist"
+
+# Pinning this keeps the Workers runtime behaviour identical between local
+# `wrangler pages dev` and production. Without it wrangler silently uses today's
+# date, so a deploy months from now could land on different runtime semantics
+# than the one that was tested.
+compatibility_date = "2026-08-05"

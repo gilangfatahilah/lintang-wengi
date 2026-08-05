@@ -54,16 +54,20 @@ Two things that are easy to get wrong and are locked by tests:
 
 ## Light pollution data
 
-Currently **stub data** — synthesised from city positions by `scripts/build_lp_grid.py --stub`. Values are plausible, not measured, and the UI says so.
+Currently **stub data** — synthesised from city positions by `scripts/build_lp_grid.py --stub`. Values are plausible, not measured, and the UI says so. Known stub artifacts: its glow falloff has too long a tail (open ocean 340 km south of Java reads Bortle 3 instead of 1) and mid-sized cities saturate (Yogyakarta reads Bortle 9 instead of ~6–7). Do not tune these — the fix is real data.
 
 Both stub and real paths emit the same contract (`lp-grid.bin` uint8 + `lp-meta.json` describing the decode), so swapping in real data is a file replacement with no code change:
 
 ```bash
+# 684 MB zipped, ~2.9 GB extracted. Falchi et al. 2016, artificial zenith
+# radiance in mcd/m^2 on a 30 arcsec grid.
+curl -O https://datapub.gfz-potsdam.de/download/10.5880.GFZ.1.4.2016.001/World_Atlas_2015.zip
 pip install rasterio    # wheels bundle GDAL; no system GDAL needed
 python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015.tif
+pnpm test               # calibration suite activates automatically
 ```
 
-Calibration lives entirely in `BORTLE_THRESHOLDS` in `src/lib/lightPollution.ts`. When real data lands, verify against a site of known Bortle class and correct there only.
+`src/lib/lightPollution.calibration.test.ts` skips itself while `lp-meta.json` reports `source: "stub"` and activates the moment real data is in place, checking sampled values at places whose sky class is not in dispute. Calibration lives entirely in `BORTLE_THRESHOLDS` in `src/lib/lightPollution.ts` — if a case fails, correct that table and nothing else, cross-checking individual coordinates against lightpollutionmap.info, which reports the same World Atlas values.
 
 ## Design
 

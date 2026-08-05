@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "typecheck": "vue-tsc --noEmit",
     "data:wilayah": "node scripts/build_wilayah_index.mjs",
-    "data:lp": "python3 scripts/build_lp_grid.py --stub"
+    "data:lp": "python3 scripts/build_lp_grid.py --stub",
+    "preview:cf": "pnpm build && wrangler pages dev dist",
+    "deploy": "pnpm build && wrangler pages deploy dist"
   },
   "dependencies": {
     "astronomy-engine": "^2.1.19",
@@ -29,6 +31,7 @@
     "typescript": "^5.7.3",
     "vite": "^7.1.0",
     "vitest": "^3.2.0",
-    "vue-tsc": "^2.2.0"
+    "vue-tsc": "^2.2.0",
+    "wrangler": "^4.118.0"
   }
 }
