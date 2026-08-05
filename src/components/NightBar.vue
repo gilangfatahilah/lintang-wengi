@@ -1,0 +1,346 @@
+<script setup lang="ts">
+/**
+ * The night at a glance: when it is dark, how cloudy, and when the moon is up.
+ *
+ * This is the one graphic the app exists to draw. A rating tells you whether to go;
+ * this tells you *when* to go, which is the decision actually being made -- a night
+ * that is 80% clouded but clear from 01:00 to 04:00 is a good night if you know it,
+ * and a wasted drive if you only saw the average.
+ *
+ * Cloud cover is drawn as an area through the 3-hourly forecast points, with a dot
+ * on each actual sample so the interpolation between them is not mistaken for real
+ * resolution. The area is dim outside astronomical darkness and saturated inside it,
+ * because only the dark part is what you can shoot in.
+ */
+import { computed } from 'vue'
+import type { ForecastPoint, MoonConditions, NightWindow } from '@/types'
+import { formatAtOffset } from '@/lib/time'
+
+const props = defineProps<{
+  window: NightWindow
+  moon: MoonConditions
+  points: readonly ForecastPoint[]
+  offsetMinutes: number
+  now?: Date
+}>()
+
+// Geometry in viewBox units. The aspect ratio is preserved on render, so these are
+// real proportions rather than something the browser will stretch.
+const W = 340
+const H = 112
+const PAD_X = 6
+const MOON_Y = 12
+const PLOT_TOP = 26
+const PLOT_BOTTOM = 80
+const TICK_Y = 96
+
+/** Pad the axis an hour either side so dusk and dawn read as edges, not cliffs. */
+const PAD_MS = 3600_000
+
+const span = computed(() => {
+  const start = props.window.start.getTime() - PAD_MS
+  const end = props.window.end.getTime() + PAD_MS
+  return { start, end, duration: end - start }
+})
+
+function toX(time: number): number {
+  const { start, duration } = span.value
+  return PAD_X + ((time - start) / duration) * (W - 2 * PAD_X)
+}
+
+function toY(cloudCover: number): number {
+  return PLOT_BOTTOM - (cloudCover / 100) * (PLOT_BOTTOM - PLOT_TOP)
+}
+
+const darkStart = computed(() => toX(props.window.start.getTime()))
+const darkEnd = computed(() => toX(props.window.end.getTime()))
+
+const samples = computed(() =>
+  props.points
+    .filter((p) => {
+      const t = p.time.getTime()
+      return t >= span.value.start && t <= span.value.end
+    })
+    .map((p) => ({
+      key: p.time.toISOString(),
+      x: toX(p.time.getTime()),
+      y: toY(p.cloudCover),
+      cover: p.cloudCover,
+    })),
+)
+
+/** Filled area under the cloud-cover line. Empty when the forecast misses the night. */
+const areaPath = computed(() => {
+  const s = samples.value
+  if (s.length === 0) return ''
+  const line = s.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' L')
+  return `M${s[0]!.x.toFixed(2)},${PLOT_BOTTOM} L${line} L${s[s.length - 1]!.x.toFixed(
+    2,
+  )},${PLOT_BOTTOM} Z`
+})
+
+/**
+ * The stretch of the night the moon is up.
+ *
+ * Derived from the sampled fraction rather than rise/set times: a window can contain
+ * zero, one or two such events, and the fraction is defined in every case. Anchoring
+ * it to the correct end matters -- a moon that sets early and one that rises late
+ * are opposite situations for planning.
+ */
+const moonTrack = computed(() => {
+  const f = props.moon.fractionAboveHorizon
+  if (f <= 0.001) return null
+  const width = (darkEnd.value - darkStart.value) * f
+  const setsDuringNight = props.moon.set !== null && props.moon.rise === null
+  return { x: setsDuringNight ? darkStart.value : darkEnd.value - width, width }
+})
+
+const ticks = computed(() => {
+  const { start, end } = span.value
+  const out: { x: number; label: string }[] = []
+  const first = Math.ceil(start / 3600_000) * 3600_000
+  for (let t = first; t <= end; t += 2 * 3600_000) {
+    out.push({ x: toX(t), label: formatAtOffset(new Date(t), props.offsetMinutes) })
+  }
+  return out
+})
+
+const nowX = computed(() => {
+  const t = (props.now ?? new Date()).getTime()
+  const { start, end } = span.value
+  return t >= start && t <= end ? toX(t) : null
+})
+
+const darkLabel = computed(
+  () =>
+    `${formatAtOffset(props.window.start, props.offsetMinutes)} – ${formatAtOffset(
+      props.window.end,
+      props.offsetMinutes,
+    )}`,
+)
+
+const moonPercent = computed(() => Math.round(props.moon.fractionAboveHorizon * 100))
+</script>
+
+<template>
+  <figure class="nightbar">
+    <figcaption class="head">
+      <span class="eyebrow">Gelap astronomis</span>
+      <span class="numeric range">{{ darkLabel }}</span>
+    </figcaption>
+
+    <svg
+      :viewBox="`0 0 ${W} ${H}`"
+      role="img"
+      :aria-label="`Malam gelap ${darkLabel}. Bulan di atas horizon ${moonPercent} persen dari durasi malam.${
+        samples.length ? '' : ' Data tutupan awan tidak tersedia untuk malam ini.'
+      }`"
+    >
+      <defs>
+        <clipPath id="dark-clip">
+          <rect
+            :x="darkStart"
+            :width="Math.max(darkEnd - darkStart, 0)"
+            :y="PLOT_TOP - 8"
+            :height="PLOT_BOTTOM - PLOT_TOP + 8"
+          />
+        </clipPath>
+      </defs>
+
+      <!-- The dark window: everything outside it is twilight or daylight. -->
+      <rect
+        :x="darkStart"
+        :width="Math.max(darkEnd - darkStart, 0)"
+        :y="PLOT_TOP - 8"
+        :height="PLOT_BOTTOM - PLOT_TOP + 8"
+        class="dark-band"
+      />
+      <line :x1="darkStart" :x2="darkStart" :y1="PLOT_TOP - 10" :y2="PLOT_BOTTOM" class="edge" />
+      <line :x1="darkEnd" :x2="darkEnd" :y1="PLOT_TOP - 10" :y2="PLOT_BOTTOM" class="edge" />
+
+      <!-- Moon presence across the dark window -->
+      <line
+        v-if="moonTrack"
+        :x1="moonTrack.x"
+        :x2="moonTrack.x + moonTrack.width"
+        :y1="MOON_Y"
+        :y2="MOON_Y"
+        class="moon-track"
+        :style="{ opacity: 0.3 + 0.7 * moon.illumination }"
+        stroke-linecap="round"
+      />
+
+      <!-- Cloud cover: dim overall, saturated where it actually matters -->
+      <template v-if="areaPath">
+        <path :d="areaPath" class="cloud-area" />
+        <path :d="areaPath" class="cloud-area bright" clip-path="url(#dark-clip)" />
+        <polyline
+          :points="samples.map((p) => `${p.x},${p.y}`).join(' ')"
+          class="cloud-line"
+          fill="none"
+        />
+        <circle v-for="p in samples" :key="p.key" :cx="p.x" :cy="p.y" r="2" class="sample" />
+      </template>
+      <text v-else :x="W / 2" :y="(PLOT_TOP + PLOT_BOTTOM) / 2" class="nodata" text-anchor="middle">
+        Prakiraan awan belum mencakup malam ini
+      </text>
+
+      <line :x1="PAD_X" :x2="W - PAD_X" :y1="PLOT_BOTTOM" :y2="PLOT_BOTTOM" class="axis" />
+
+      <line
+        v-if="nowX !== null"
+        :x1="nowX"
+        :x2="nowX"
+        :y1="PLOT_TOP - 14"
+        :y2="PLOT_BOTTOM + 4"
+        class="now"
+      />
+
+      <text
+        v-for="t in ticks"
+        :key="t.label"
+        :x="t.x"
+        :y="TICK_Y"
+        class="tick"
+        text-anchor="middle"
+      >
+        {{ t.label }}
+      </text>
+    </svg>
+
+    <ul class="legend">
+      <li><i class="swatch cloud-swatch" aria-hidden="true"></i>Tutupan awan</li>
+      <li>
+        <i class="swatch moon-swatch" aria-hidden="true"></i>Bulan di atas horizon
+        <span class="numeric">{{ moonPercent }}%</span>
+      </li>
+      <li v-if="nowX !== null"><i class="swatch now-swatch" aria-hidden="true"></i>Sekarang</li>
+    </ul>
+  </figure>
+</template>
+
+<style scoped>
+.nightbar {
+  margin: 0;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.375rem;
+}
+
+.range {
+  font-size: 0.8125rem;
+  color: var(--star);
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dark-band {
+  fill: var(--night-band);
+}
+
+.edge {
+  stroke: var(--ember-dim);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.axis {
+  stroke: rgba(232, 228, 218, 0.16);
+  stroke-width: 1;
+}
+
+.cloud-area {
+  fill: var(--haze);
+  opacity: 0.16;
+}
+
+.cloud-area.bright {
+  opacity: 0.42;
+}
+
+.cloud-line {
+  stroke: var(--haze);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.sample {
+  fill: var(--star);
+  opacity: 0.65;
+}
+
+.moon-track {
+  stroke: var(--clear);
+  stroke-width: 4;
+}
+
+.now {
+  stroke: var(--ember);
+  stroke-width: 1.5;
+}
+
+.tick,
+.nodata {
+  fill: var(--haze);
+  font-family: var(--font-mono);
+}
+
+.tick {
+  font-size: 11px;
+}
+
+.nodata {
+  font-size: 11px;
+  font-style: italic;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.875rem;
+  margin: 0.375rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--haze);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.swatch {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 1px;
+}
+
+.cloud-swatch {
+  background: var(--haze);
+  opacity: 0.5;
+}
+
+.moon-swatch {
+  background: var(--clear);
+  height: 0.1875rem;
+  border-radius: 2px;
+}
+
+.now-swatch {
+  background: var(--ember);
+  width: 0.125rem;
+  height: 0.75rem;
+}
+</style>

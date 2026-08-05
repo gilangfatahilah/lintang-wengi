@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.wrangler/
+*.local
+.DS_Store
+
+# Light pollution artifacts are regenerated in seconds via `pnpm data:lp`, so they
+# stay out of git. The wilayah index IS committed — rebuilding it needs network plus
+# 11.6 MB of boundary SQL, and it only changes when Kemendagri revises region codes.
+public/data/lp-grid.bin
+public/data/lp-meta.json
+public/data/lp-overlay.png
+
+# Raw source rasters — never commit these
+scripts/raw/
+*.tif
+*.tiff
