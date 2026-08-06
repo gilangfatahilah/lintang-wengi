@@ -1,4 +1,4 @@
-# Stargazing Spot Finder
+# Lintang Wengi
 
 Cari lokasi astrophotography dan stargazing di Indonesia. Klik satu titik di peta, dapat skor kelayakan malam ini dari gabungan polusi cahaya, prakiraan tutupan awan BMKG, dan gangguan cahaya bulan — dihitung untuk jendela gelap astronomis di lokasi tersebut.
 

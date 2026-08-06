@@ -11,28 +11,39 @@
  * on each actual sample so the interpolation between them is not mistaken for real
  * resolution. The area is dim outside astronomical darkness and saturated inside it,
  * because only the dark part is what you can shoot in.
+ *
+ * The galactic core rides a second track above the moon's. Both are answers to the
+ * same question -- when in this night is it worth being outside -- and reading them
+ * against each other on one axis is the whole reason they share it: a core window
+ * that sits under the moon's is a different night from one that does not.
  */
 import { computed } from 'vue'
-import type { ForecastPoint, MoonConditions, NightWindow } from '@/types'
+import type { ForecastPoint, MoonConditions, NightWindow, ObjectVisibility } from '@/types'
 import { formatAtOffset } from '@/lib/time'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   window: NightWindow
   moon: MoonConditions
   points: readonly ForecastPoint[]
   offsetMinutes: number
+  /** Galactic core visibility, or null when it never clears the useful altitude. */
+  core?: ObjectVisibility | null
   now?: Date
 }>()
 
 // Geometry in viewBox units. The aspect ratio is preserved on render, so these are
 // real proportions rather than something the browser will stretch.
 const W = 340
-const H = 112
+const H = 118
 const PAD_X = 6
-const MOON_Y = 12
-const PLOT_TOP = 26
-const PLOT_BOTTOM = 80
-const TICK_Y = 96
+const CORE_Y = 10
+const MOON_Y = 20
+const PLOT_TOP = 32
+const PLOT_BOTTOM = 86
+const TICK_Y = 102
 
 /** Pad the axis an hour either side so dusk and dawn read as edges, not cliffs. */
 const PAD_MS = 3600_000
@@ -120,21 +131,42 @@ const darkLabel = computed(
 )
 
 const moonPercent = computed(() => Math.round(props.moon.fractionAboveHorizon * 100))
+
+/**
+ * The stretch the galactic core is usable, clipped to the dark window.
+ *
+ * Comes straight from `from`/`to` rather than being reconstructed from a fraction:
+ * unlike the moon, the core's window has real endpoints, and where it sits in the
+ * night is the point -- an early core and a pre-dawn core mean different alarm clocks.
+ */
+const coreTrack = computed(() => {
+  const v = props.core
+  if (!v?.from || !v.to) return null
+  const x1 = toX(v.from.getTime())
+  const x2 = toX(v.to.getTime())
+  return { x: x1, width: Math.max(x2 - x1, 1) }
+})
+
+/** Screen-reader summary of the whole graphic, assembled from the same numbers. */
+const ariaLabel = computed(() => {
+  const parts = [t('night.ariaSummary', { range: darkLabel.value, percent: moonPercent.value })]
+  if (coreTrack.value) parts.push(t('night.ariaCore'))
+  if (!samples.value.length) parts.push(t('night.noForecast'))
+  return parts.join(' ')
+})
 </script>
 
 <template>
   <figure class="nightbar">
     <figcaption class="head">
-      <span class="eyebrow">Gelap astronomis</span>
+      <span class="eyebrow">{{ t('night.astronomicalDark') }}</span>
       <span class="numeric range">{{ darkLabel }}</span>
     </figcaption>
 
     <svg
       :viewBox="`0 0 ${W} ${H}`"
       role="img"
-      :aria-label="`Malam gelap ${darkLabel}. Bulan di atas horizon ${moonPercent} persen dari durasi malam.${
-        samples.length ? '' : ' Data tutupan awan tidak tersedia untuk malam ini.'
-      }`"
+      :aria-label="ariaLabel"
     >
       <defs>
         <clipPath id="dark-clip">
@@ -157,6 +189,17 @@ const moonPercent = computed(() => Math.round(props.moon.fractionAboveHorizon * 
       />
       <line :x1="darkStart" :x2="darkStart" :y1="PLOT_TOP - 10" :y2="PLOT_BOTTOM" class="edge" />
       <line :x1="darkEnd" :x2="darkEnd" :y1="PLOT_TOP - 10" :y2="PLOT_BOTTOM" class="edge" />
+
+      <!-- Galactic core: the window you actually came for -->
+      <line
+        v-if="coreTrack"
+        :x1="coreTrack.x"
+        :x2="coreTrack.x + coreTrack.width"
+        :y1="CORE_Y"
+        :y2="CORE_Y"
+        class="core-track"
+        stroke-linecap="round"
+      />
 
       <!-- Moon presence across the dark window -->
       <line
@@ -182,7 +225,7 @@ const moonPercent = computed(() => Math.round(props.moon.fractionAboveHorizon * 
         <circle v-for="p in samples" :key="p.key" :cx="p.x" :cy="p.y" r="2" class="sample" />
       </template>
       <text v-else :x="W / 2" :y="(PLOT_TOP + PLOT_BOTTOM) / 2" class="nodata" text-anchor="middle">
-        Prakiraan awan belum mencakup malam ini
+        {{ t('night.noForecast') }}
       </text>
 
       <line :x1="PAD_X" :x2="W - PAD_X" :y1="PLOT_BOTTOM" :y2="PLOT_BOTTOM" class="axis" />
@@ -191,7 +234,7 @@ const moonPercent = computed(() => Math.round(props.moon.fractionAboveHorizon * 
         v-if="nowX !== null"
         :x1="nowX"
         :x2="nowX"
-        :y1="PLOT_TOP - 14"
+        :y1="CORE_Y - 4"
         :y2="PLOT_BOTTOM + 4"
         class="now"
       />
@@ -209,12 +252,15 @@ const moonPercent = computed(() => Math.round(props.moon.fractionAboveHorizon * 
     </svg>
 
     <ul class="legend">
-      <li><i class="swatch cloud-swatch" aria-hidden="true"></i>Tutupan awan</li>
+      <li><i class="swatch cloud-swatch" aria-hidden="true"></i>{{ t('night.cloudCover') }}</li>
       <li>
-        <i class="swatch moon-swatch" aria-hidden="true"></i>Bulan di atas horizon
+        <i class="swatch moon-swatch" aria-hidden="true"></i>{{ t('night.moonUp') }}
         <span class="numeric">{{ moonPercent }}%</span>
       </li>
-      <li v-if="nowX !== null"><i class="swatch now-swatch" aria-hidden="true"></i>Sekarang</li>
+      <li v-if="coreTrack">
+        <i class="swatch core-swatch" aria-hidden="true"></i>{{ t('milkyWay.heading') }}
+      </li>
+      <li v-if="nowX !== null"><i class="swatch now-swatch" aria-hidden="true"></i>{{ t('night.now') }}</li>
     </ul>
   </figure>
 </template>
@@ -283,6 +329,12 @@ svg {
   stroke-width: 4;
 }
 
+.core-track {
+  stroke: var(--star);
+  stroke-width: 4;
+  opacity: 0.85;
+}
+
 .now {
   stroke: var(--ember);
   stroke-width: 1.5;
@@ -334,6 +386,12 @@ svg {
 
 .moon-swatch {
   background: var(--clear);
+  height: 0.1875rem;
+  border-radius: 2px;
+}
+
+.core-swatch {
+  background: var(--star);
   height: 0.1875rem;
   border-radius: 2px;
 }

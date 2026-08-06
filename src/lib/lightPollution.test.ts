@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   sampleMagnitude,
   magnitudeToBortle,
-  bortleLabel,
+  bortleText,
   type LpGrid,
   type LpMeta,
 } from './lightPollution'
@@ -79,9 +79,9 @@ describe('magnitudeToBortle', () => {
   })
 })
 
-describe('bortleLabel', () => {
-  it('describes each class in Indonesian', () => {
-    expect(bortleLabel(1)).toMatch(/langit gelap sempurna/i)
-    expect(bortleLabel(9)).toMatch(/pusat kota/i)
+describe('bortleText', () => {
+  it('returns a message key per class rather than a sentence', () => {
+    expect(bortleText(1).key).toBe('bortle.1')
+    expect(bortleText(9).key).toBe('bortle.9')
   })
 })

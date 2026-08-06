@@ -1,13 +1,25 @@
 <script setup lang="ts">
 import { ref, shallowRef, computed, onMounted, watch } from 'vue'
 import type { Forecast, Kecamatan, LatLng, MoonConditions, NightWindow, Score } from '@/types'
-import { loadGrid, sampleMagnitude, magnitudeToBortle, type LpGrid } from '@/lib/lightPollution'
+import {
+  loadGrid,
+  sampleMagnitude,
+  magnitudeToBortle,
+  isStubGrid,
+  type LpGrid,
+} from '@/lib/lightPollution'
 import { loadIndex, findNearest, haversineKm } from '@/lib/wilayah'
 import { fetchForecast } from '@/lib/bmkg'
 import { nightWindow, moonConditions } from '@/lib/astro'
 import { computeScore, cloudCoverForNight } from '@/lib/scoring'
 import MapView from './components/MapView.vue'
+import PlaceSearch from './components/PlaceSearch.vue'
 import SpotPanel from './components/SpotPanel.vue'
+import { provideI18n } from '@/composables/useI18n'
+import { LOCALES } from '@/lib/i18n'
+
+// Created here so every descendant shares one reactive locale.
+const { t, locale, setLocale } = provideI18n()
 
 const grid = shallowRef<LpGrid | null>(null)
 const index = shallowRef<Kecamatan[] | null>(null)
@@ -23,6 +35,7 @@ const forecastState = ref<'idle' | 'loading' | 'error'>('idle')
 const forecastError = ref<string | null>(null)
 
 const fieldMode = ref(false)
+const mapView = ref<InstanceType<typeof MapView> | null>(null)
 
 /** Cancels an in-flight forecast when the user clicks somewhere else. */
 let pending: AbortController | null = null
@@ -35,8 +48,7 @@ onMounted(async () => {
 
   const failed = results.filter((r) => r.status === 'rejected')
   if (failed.length) {
-    loadError.value =
-      'Sebagian data gagal dimuat. Jalankan `pnpm data:lp` dan `pnpm data:wilayah`, lalu muat ulang.'
+    loadError.value = t('app.dataError')
   }
 })
 
@@ -48,6 +60,9 @@ const score = computed<Score | null>(() => {
       : null
   return computeScore({ bortle: bortle.value, cloudCover, moon: moon.value })
 })
+
+/** Until the grid loads, assume placeholder rather than claiming calibrated data. */
+const lpStub = computed(() => (grid.value ? isStubGrid(grid.value.meta) : true))
 
 const distanceKm = computed(() =>
   selected.value && forecast.value
@@ -86,7 +101,7 @@ function pick(point: LatLng) {
   nearest.value = match
   if (!match) {
     forecastState.value = 'error'
-    forecastError.value = 'Indeks wilayah belum tersedia.'
+    forecastError.value = 'errors.wilayahIndex'
     return
   }
 
@@ -106,6 +121,12 @@ function pick(point: LatLng) {
     })
 }
 
+/** Search and GPS results are off-screen by definition, so the map follows them. */
+function pickAndFly(point: LatLng) {
+  pick(point)
+  mapView.value?.flyTo(point)
+}
+
 watch(fieldMode, (on) => {
   document.documentElement.dataset.field = String(on)
 })
@@ -114,24 +135,44 @@ watch(fieldMode, (on) => {
 <template>
   <div class="shell">
     <header class="topbar">
-      <h1 class="wordmark">
-        Stargazing<span class="mark">·</span>Spot<span class="mark">·</span>Finder
-      </h1>
-      <button
-        class="field-toggle"
+      <h1 class="logo" role="img" aria-label="Lintang Wengi"></h1>
+      <div class="controls">
+        <div class="lang" role="group" :aria-label="t('app.language')">
+          <button
+            v-for="code in LOCALES"
+            :key="code"
+            type="button"
+            :aria-pressed="locale === code"
+            :class="{ on: locale === code }"
+            @click="setLocale(code)"
+          >
+            {{ code.toUpperCase() }}
+          </button>
+        </div>
+        <button
+          class="field-toggle"
         type="button"
         :aria-pressed="fieldMode"
-        title="Merah monokrom, agar adaptasi gelap mata tidak hilang saat di lapangan"
+        :title="t('app.fieldModeHint')"
         @click="fieldMode = !fieldMode"
       >
-        Mode lapangan
-      </button>
+          {{ t('app.fieldMode') }}
+        </button>
+      </div>
     </header>
 
     <p v-if="loadError" class="load-error">{{ loadError }}</p>
 
     <main class="body">
-      <MapView :selected="selected" :lp-meta="grid?.meta ?? null" @pick="pick" />
+      <div class="map-area">
+        <MapView
+          ref="mapView"
+          :selected="selected"
+          :lp-meta="grid?.meta ?? null"
+          @pick="pick"
+        />
+        <PlaceSearch :index="index" :lp-meta="grid?.meta ?? null" @pick="pickAndFly" />
+      </div>
 
       <SpotPanel
         v-if="selected"
@@ -144,13 +185,11 @@ watch(fieldMode, (on) => {
         :forecast-state="forecastState"
         :forecast-error="forecastError"
         :distance-km="distanceKm"
+        :lp-stub="lpStub"
       />
       <aside v-else class="empty">
-        <p class="lede">Pilih titik di peta.</p>
-        <p class="sub">
-          Skor kelayakan malam ini dihitung dari polusi cahaya lokasi, tutupan awan BMKG,
-          dan posisi bulan selama jendela gelap astronomis.
-        </p>
+        <p class="lede">{{ t('app.tagline') }}</p>
+        <p class="sub">{{ t('app.intro') }}</p>
       </aside>
     </main>
   </div>
@@ -173,18 +212,49 @@ watch(fieldMode, (on) => {
   background: var(--panel);
 }
 
-.wordmark {
+/*
+ * The logo ships as a single-colour navy silhouette on transparency. Drawn as an
+ * image it would be near-invisible on --panel and would stay blue in field mode,
+ * so it is used as a mask and filled from the palette instead: warm by default,
+ * red the moment "Mode lapangan" retunes --star. No second asset, no blue-white.
+ */
+.logo {
+  flex: none;
   margin: 0;
-  font-family: var(--font-display);
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  height: 1.5rem;
+  aspect-ratio: 1735 / 801;
+  background-color: var(--star);
+  -webkit-mask: url("/logo-mark.png") center / contain no-repeat;
+  mask: url("/logo-mark.png") center / contain no-repeat;
 }
 
-.mark {
-  color: var(--ember);
-  padding: 0 0.1em;
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Two-state segmented control; the active side borrows the field-toggle's accent. */
+.lang {
+  display: flex;
+  border: var(--rule);
+}
+
+.lang button {
+  padding: 0.375rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--haze);
+}
+
+.lang button + button {
+  border-left: var(--rule);
+}
+
+.lang button.on {
+  color: var(--star);
+  background: var(--panel-raised);
 }
 
 .field-toggle {
@@ -196,7 +266,7 @@ watch(fieldMode, (on) => {
   color: var(--haze);
 }
 
-.field-toggle[aria-pressed='true'] {
+.field-toggle[aria-pressed="true"] {
   color: var(--ember);
   border-color: var(--ember-dim);
 }
@@ -209,6 +279,11 @@ watch(fieldMode, (on) => {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--ember);
+}
+
+.map-area {
+  position: relative;
+  min-width: 0;
 }
 
 .body {

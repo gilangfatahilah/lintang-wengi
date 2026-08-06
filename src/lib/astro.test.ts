@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import * as A from 'astronomy-engine'
-import { nightWindow, moonConditions, phaseName } from './astro'
+import { nightWindow, moonConditions, phaseKeyOf } from './astro'
 
 // Bandung-ish: equatorial, WIB. Used for most cases.
 const BANDUNG = { lat: -6.9175, lon: 107.6191 }
@@ -108,15 +108,15 @@ describe('moonConditions', () => {
   })
 })
 
-describe('phaseName', () => {
-  it('names the four principal phases in Indonesian', () => {
-    expect(phaseName(0)).toBe('Bulan Baru')
-    expect(phaseName(90)).toBe('Kuartal Pertama')
-    expect(phaseName(180)).toBe('Purnama')
-    expect(phaseName(270)).toBe('Kuartal Terakhir')
+describe('phaseKeyOf', () => {
+  it('identifies the four principal phases', () => {
+    expect(phaseKeyOf(0)).toBe('new')
+    expect(phaseKeyOf(90)).toBe('firstQuarter')
+    expect(phaseKeyOf(180)).toBe('full')
+    expect(phaseKeyOf(270)).toBe('lastQuarter')
   })
 
   it('wraps 360 back to new moon', () => {
-    expect(phaseName(359.9)).toBe('Bulan Baru')
+    expect(phaseKeyOf(359.9)).toBe('new')
   })
 })

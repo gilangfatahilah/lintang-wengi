@@ -7,21 +7,21 @@ const NEW_MOON: MoonConditions = {
   fractionAboveHorizon: 0,
   rise: null,
   set: null,
-  phaseName: 'Bulan Baru',
+  phaseKey: 'new',
 }
 const FULL_MOON_ALL_NIGHT: MoonConditions = {
   illumination: 1,
   fractionAboveHorizon: 1,
   rise: null,
   set: null,
-  phaseName: 'Purnama',
+  phaseKey: 'full',
 }
 const FULL_MOON_ALREADY_SET: MoonConditions = {
   illumination: 1,
   fractionAboveHorizon: 0,
   rise: null,
   set: null,
-  phaseName: 'Purnama',
+  phaseKey: 'full',
 }
 
 describe('computeScore', () => {

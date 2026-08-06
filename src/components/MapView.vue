@@ -3,6 +3,9 @@ import { onMounted, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import maplibregl, { type StyleSpecification } from 'maplibre-gl'
 import type { LatLng } from '@/types'
 import type { LpMeta } from '@/lib/lightPollution'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   selected: LatLng | null
@@ -113,6 +116,13 @@ watch(
   },
 )
 
+/** Lets the parent recentre the map when a point arrives from search or GPS. */
+defineExpose({
+  flyTo(point: LatLng) {
+    map.value?.flyTo({ center: [point.lon, point.lat], zoom: Math.max(map.value.getZoom(), 9) })
+  },
+})
+
 watch(overlayVisible, (visible) => {
   const m = map.value
   if (m?.getLayer('lp-layer')) {
@@ -130,7 +140,7 @@ watch(overlayVisible, (visible) => {
       :aria-pressed="overlayVisible"
       @click="overlayVisible = !overlayVisible"
     >
-      Polusi cahaya: {{ overlayVisible ? 'tampil' : 'sembunyi' }}
+      {{ t('map.lightPollution') }}: {{ overlayVisible ? t('map.shown') : t('map.hidden') }}
     </button>
   </div>
 </template>
@@ -147,7 +157,8 @@ watch(overlayVisible, (visible) => {
 
 .overlay-toggle {
   position: absolute;
-  top: 0.75rem;
+  /* Below the search field, which owns the top-left corner. */
+  bottom: 0.75rem;
   left: 0.75rem;
   padding: 0.4375rem 0.6875rem;
   background: rgba(14, 17, 23, 0.92);

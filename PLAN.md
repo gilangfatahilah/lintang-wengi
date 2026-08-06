@@ -1,6 +1,6 @@
-# Stargazing Spot Finder — MVP Brief
+# Lintang Wengi — MVP Brief
 
-> Working title. Side project — web app GIS untuk mencari & menilai lokasi astrophotography/stargazing terbaik di Indonesia berdasarkan light pollution, cuaca, dan fase bulan.
+> Side project — web app GIS untuk mencari & menilai lokasi astrophotography/stargazing terbaik di Indonesia berdasarkan light pollution, cuaca, dan fase bulan.
 
 ## 1. Ringkasan & Problem
 

@@ -1,5 +1,5 @@
 import * as A from 'astronomy-engine'
-import type { LatLng, MoonConditions, NightWindow } from '@/types'
+import type { LatLng, MoonConditions, MoonPhaseKey, NightWindow } from '@/types'
 
 /**
  * Sun altitude defining astronomical darkness. Above this the sky still carries
@@ -71,7 +71,7 @@ export function nightWindow(loc: LatLng, reference: Date = new Date()): NightWin
   const sunrise = sunset && A.SearchRiseSet(A.Body.Sun, observer, DIRECTION_RISE, sunset.date, 2)
   if (sunset && sunrise) return { start: sunset.date, end: sunrise.date }
 
-  throw new Error('Tidak dapat menghitung jendela malam untuk lokasi ini.')
+  throw new Error('errors.nightWindow')
 }
 
 /**
@@ -81,17 +81,24 @@ export function nightWindow(loc: LatLng, reference: Date = new Date()): NightWin
  * window can contain zero, one, or two such events, and sampling handles every
  * case identically. Paired with illumination it captures the distinction that
  * actually matters -- a bright moon that has already set costs you nothing.
+ *
+ * `samples` is loosened only by the 30-night planning calendar, where a coarser grid
+ * still ranks nights correctly and runs thirty times faster.
  */
-export function moonConditions(loc: LatLng, window: NightWindow): MoonConditions {
+export function moonConditions(
+  loc: LatLng,
+  window: NightWindow,
+  samples: number = MOON_SAMPLES,
+): MoonConditions {
   const observer = observerAt(loc)
   const startMs = window.start.getTime()
   const endMs = window.end.getTime()
   const midpoint = new Date((startMs + endMs) / 2)
 
   let aboveCount = 0
-  for (let i = 0; i < MOON_SAMPLES; i++) {
+  for (let i = 0; i < samples; i++) {
     // Sample cell centres so neither endpoint is double-weighted.
-    const t = new Date(startMs + ((i + 0.5) / MOON_SAMPLES) * (endMs - startMs))
+    const t = new Date(startMs + ((i + 0.5) / samples) * (endMs - startMs))
     if (altitudeOf(A.Body.Moon, t, observer) > 0) aboveCount++
   }
 
@@ -100,25 +107,28 @@ export function moonConditions(loc: LatLng, window: NightWindow): MoonConditions
 
   return {
     illumination: A.Illumination(A.Body.Moon, midpoint).phase_fraction,
-    fractionAboveHorizon: aboveCount / MOON_SAMPLES,
+    fractionAboveHorizon: aboveCount / samples,
     rise: rise?.date ?? null,
     set: set?.date ?? null,
-    phaseName: phaseName(A.MoonPhase(midpoint)),
+    phaseKey: phaseKeyOf(A.MoonPhase(midpoint)),
   }
 }
 
 /**
- * Indonesian name for a lunar phase angle in degrees (0 new, 180 full).
- * Boundaries are the conventional 45° bands centred on the principal phases.
+ * Which principal phase a lunar phase angle falls in (0 new, 180 full).
+ *
+ * Returns a key rather than a name: naming is the render layer's job, and this file
+ * has no business knowing which language the reader wants. Boundaries are the
+ * conventional 45° bands centred on the principal phases.
  */
-export function phaseName(phaseAngle: number): string {
+export function phaseKeyOf(phaseAngle: number): MoonPhaseKey {
   const a = ((phaseAngle % 360) + 360) % 360
-  if (a < 22.5 || a >= 337.5) return 'Bulan Baru'
-  if (a < 67.5) return 'Sabit Awal'
-  if (a < 112.5) return 'Kuartal Pertama'
-  if (a < 157.5) return 'Cembung Awal'
-  if (a < 202.5) return 'Purnama'
-  if (a < 247.5) return 'Cembung Akhir'
-  if (a < 292.5) return 'Kuartal Terakhir'
-  return 'Sabit Akhir'
+  if (a < 22.5 || a >= 337.5) return 'new'
+  if (a < 67.5) return 'waxingCrescent'
+  if (a < 112.5) return 'firstQuarter'
+  if (a < 157.5) return 'waxingGibbous'
+  if (a < 202.5) return 'full'
+  if (a < 247.5) return 'waningGibbous'
+  if (a < 292.5) return 'lastQuarter'
+  return 'waningCrescent'
 }

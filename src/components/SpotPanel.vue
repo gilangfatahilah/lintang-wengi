@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+/**
+ * The panel is a shell: place, tabs, and the BMKG attribution. Each tab owns its own
+ * content and its own computation, so the expensive sky work only runs once someone
+ * asks to see it.
+ */
+import { computed, ref } from 'vue'
 import type { Forecast, LatLng, MoonConditions, NightWindow, Score } from '@/types'
-import { bortleLabel } from '@/lib/lightPollution'
-import { ratingLabel, limitingFactorText } from '@/lib/scoring'
-import { approximateOffsetMinutes, formatAtOffset, timezoneLabel } from '@/lib/time'
-import NightBar from './NightBar.vue'
+import { approximateOffsetMinutes } from '@/lib/time'
+import ScoreTab from './ScoreTab.vue'
+import SkyTab from './SkyTab.vue'
+import WeatherTab from './WeatherTab.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   point: LatLng
@@ -16,7 +24,23 @@ const props = defineProps<{
   forecastState: 'idle' | 'loading' | 'error'
   forecastError: string | null
   distanceKm: number | null
+  /** True while the light pollution grid is placeholder data. */
+  lpStub: boolean
 }>()
+
+type TabKey = 'skor' | 'langit' | 'cuaca'
+
+const TABS: ReadonlyArray<{ key: TabKey; labelKey: string }> = [
+  { key: 'skor', labelKey: 'panel.tabs.score' },
+  { key: 'langit', labelKey: 'panel.tabs.sky' },
+  { key: 'cuaca', labelKey: 'panel.tabs.weather' },
+]
+
+/**
+ * Deliberately not reset when `point` changes: someone comparing two spots on the
+ * Langit tab should not be thrown back to Skor by every click on the map.
+ */
+const active = ref<TabKey>('skor')
 
 // The forecast carries the location's real offset; until it lands, approximate from
 // longitude so displayed times are not silently rendered in the viewer's timezone.
@@ -26,18 +50,10 @@ const offset = computed(
 
 const placeName = computed(() => {
   const l = props.forecast?.location
-  return l ? `${l.kecamatan}, ${l.kotkab}` : 'Menentukan wilayah…'
+  return l ? `${l.kecamatan}, ${l.kotkab}` : t('panel.resolving')
 })
 
-const coords = computed(
-  () => `${props.point.lat.toFixed(4)}°, ${props.point.lon.toFixed(4)}°`,
-)
-
-const moonTimes = computed(() => {
-  if (!props.moon) return null
-  const fmt = (d: Date | null) => (d ? formatAtOffset(d, offset.value) : '—')
-  return { rise: fmt(props.moon.rise), set: fmt(props.moon.set) }
-})
+const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lon.toFixed(4)}°`)
 </script>
 
 <template>
@@ -47,80 +63,64 @@ const moonTimes = computed(() => {
       <p class="numeric coords">{{ coords }}</p>
     </header>
 
-    <!-- The verdict, stated before the evidence. -->
-    <section v-if="score" class="verdict">
-      <div class="rating">
-        <span class="numeric value">{{ score.rating }}</span>
-        <span class="denom">/5</span>
-      </div>
-      <div class="verdict-text">
-        <p class="label">{{ ratingLabel(score.rating) }}</p>
-        <p v-if="limitingFactorText(score)" class="reason">{{ limitingFactorText(score) }}</p>
-        <p v-else-if="score.complete" class="reason good">Tidak ada faktor yang menahan.</p>
-        <p v-if="!score.complete" class="reason provisional">
-          Sementara — dihitung tanpa data cuaca.
-        </p>
-      </div>
-    </section>
+    <nav class="tabs" role="tablist" :aria-label="t('panel.tabsLabel')">
+      <button
+        v-for="tab in TABS"
+        :key="tab.key"
+        type="button"
+        role="tab"
+        :aria-selected="active === tab.key"
+        :class="{ on: active === tab.key }"
+        @click="active = tab.key"
+      >
+        {{ t(tab.labelKey) }}
+      </button>
+    </nav>
 
-    <NightBar
-      v-if="window && moon"
+    <ScoreTab
+      v-if="active === 'skor'"
+      :point="point"
+      :bortle="bortle"
       :window="window"
       :moon="moon"
-      :points="forecast?.points ?? []"
+      :forecast="forecast"
+      :score="score"
+      :forecast-state="forecastState"
+      :forecast-error="forecastError"
+      :distance-km="distanceKm"
       :offset-minutes="offset"
     />
 
-    <p v-if="forecastState === 'loading'" class="status">Mengambil prakiraan BMKG…</p>
-    <p v-else-if="forecastState === 'error'" class="status error">
-      {{ forecastError }}
-      <span class="hint">Skor dihitung dari polusi cahaya dan bulan saja.</span>
-    </p>
+    <SkyTab
+      v-else-if="active === 'langit'"
+      :point="point"
+      :bortle="bortle"
+      :window="window"
+      :moon="moon"
+      :forecast="forecast"
+      :offset-minutes="offset"
+    />
 
-    <dl class="readout">
-      <div class="row">
-        <dt class="eyebrow">Langit</dt>
-        <dd>
-          <span class="numeric strong">{{ bortle !== null ? `Bortle ${bortle}` : '—' }}</span>
-          <span v-if="bortle !== null" class="detail">{{ bortleLabel(bortle) }}</span>
-        </dd>
-      </div>
-
-      <div class="row">
-        <dt class="eyebrow">Bulan</dt>
-        <dd>
-          <span class="numeric strong">
-            {{ moon ? `${moon.phaseName} ${Math.round(moon.illumination * 100)}%` : '—' }}
-          </span>
-          <span v-if="moonTimes" class="detail numeric">
-            terbit {{ moonTimes.rise }} · terbenam {{ moonTimes.set }}
-            {{ timezoneLabel(offset) }}
-          </span>
-        </dd>
-      </div>
-
-      <div v-if="forecast" class="row">
-        <dt class="eyebrow">Titik cuaca</dt>
-        <dd>
-          <span class="numeric strong">{{ forecast.location.desa }}</span>
-          <span v-if="distanceKm !== null" class="detail numeric">
-            {{ distanceKm.toFixed(1) }} km dari titik yang dipilih
-          </span>
-        </dd>
-      </div>
-    </dl>
+    <WeatherTab
+      v-else
+      :forecast="forecast"
+      :window="window"
+      :forecast-state="forecastState"
+      :forecast-error="forecastError"
+      :offset-minutes="offset"
+    />
 
     <!-- BMKG requires attribution wherever their data is shown. It belongs next to
          the data it describes, not buried in a page footer. -->
     <footer class="attribution">
       <p>
-        Data cuaca:
+        {{ t('panel.attributionWeather') }}
         <a href="https://data.bmkg.go.id/prakiraan-cuaca/" target="_blank" rel="noopener">
           BMKG
         </a>
-        — Badan Meteorologi, Klimatologi, dan Geofisika
+        {{ t('panel.attributionAgency') }}
       </p>
-      <p class="fine">Polusi cahaya: data sementara, belum dikalibrasi.</p>
+      <p class="fine">{{ lpStub ? t('panel.lpStub') : t('panel.lpReal') }}</p>
     </footer>
   </aside>
 </template>
@@ -154,110 +154,35 @@ const moonTimes = computed(() => {
   color: var(--haze);
 }
 
-.verdict {
+.tabs {
   display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.875rem;
-  background: var(--panel-raised);
-  border-left: 2px solid var(--ember);
-}
-
-.rating {
-  display: flex;
-  align-items: baseline;
-  line-height: 1;
-}
-
-.value {
-  font-family: var(--font-display);
-  font-size: 2.5rem;
-  font-weight: 700;
-}
-
-.denom {
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
-  color: var(--haze);
-}
-
-.verdict-text {
-  min-width: 0;
-}
-
-.label {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 0.9375rem;
-  font-weight: 500;
-}
-
-.reason {
-  margin: 0.125rem 0 0;
-  font-size: 0.8125rem;
-  color: var(--haze);
-}
-
-.reason.good {
-  color: var(--clear);
-}
-
-.reason.provisional {
-  color: var(--ember);
-}
-
-.status {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--haze);
-}
-
-.status.error {
-  color: var(--ember);
-}
-
-.hint {
-  display: block;
-  color: var(--haze);
-}
-
-.readout {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  border-top: var(--rule);
-}
-
-.row {
-  display: grid;
-  grid-template-columns: 6rem 1fr;
-  gap: 0.75rem;
-  padding: 0.6875rem 0;
+  gap: 1.25rem;
+  margin-bottom: -0.5rem;
   border-bottom: var(--rule);
 }
 
-.row dt {
-  padding-top: 0.1875rem;
-}
-
-.row dd {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  margin: 0;
-  min-width: 0;
-}
-
-.strong {
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.detail {
-  font-size: 0.75rem;
-  line-height: 1.4;
+.tabs button {
+  position: relative;
+  padding: 0 0 0.4375rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--haze);
+}
+
+.tabs button.on {
+  color: var(--star);
+}
+
+/* The rule sits on the nav; the active marker overlaps it rather than shifting it. */
+.tabs button.on::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 2px;
+  background: var(--ember);
 }
 
 .attribution {

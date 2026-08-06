@@ -1,5 +1,6 @@
 import type { Forecast, ForecastPoint } from '@/types'
-import { formatAtOffset } from './time'
+import type { Locale } from './i18n'
+import { formatAtOffset, formatDayLabel, localDayKey } from './time'
 
 /** The subset of the BMKG response we rely on. */
 export interface BmkgResponse {
@@ -49,7 +50,7 @@ function offsetMinutesOf(localDatetime: string, utcDatetime: string): number {
 export function parseForecast(raw: BmkgResponse): Forecast {
   const entry = raw.data?.[0]
   if (!entry?.cuaca?.length) {
-    throw new Error('Data prakiraan cuaca tidak tersedia untuk lokasi ini.')
+    throw new Error('errors.forecastEmpty')
   }
 
   const points: ForecastPoint[] = entry.cuaca.flat().map((p) => ({
@@ -84,6 +85,40 @@ export function formatLocalTime(point: ForecastPoint): string {
   return formatAtOffset(point.time, point.offsetMinutes)
 }
 
+export interface ForecastDay {
+  /** Sortable "YYYY-MM-DD" at the forecast location. */
+  key: string
+  /** "Rab, 5 Agu" */
+  label: string
+  points: ForecastPoint[]
+}
+
+/**
+ * Splits the flat forecast into calendar days *at the forecast location*.
+ *
+ * The grouping has to use each point's own offset, not the viewer's: a Papuan
+ * forecast read from Jakarta would otherwise have its late-evening points pushed
+ * into the previous day, and the first day is already partial without help. Days
+ * come back in chronological order; the first is normally short, because BMKG
+ * publishes from the current 3-hour slot rather than from midnight.
+ */
+export function groupByLocalDay(
+  points: readonly ForecastPoint[],
+  locale: Locale = 'en',
+): ForecastDay[] {
+  const days = new Map<string, ForecastDay>()
+  for (const p of points) {
+    const key = localDayKey(p.time, p.offsetMinutes)
+    let day = days.get(key)
+    if (!day) {
+      day = { key, label: formatDayLabel(p.time, p.offsetMinutes, locale), points: [] }
+      days.set(key, day)
+    }
+    day.points.push(p)
+  }
+  return [...days.values()].sort((a, b) => a.key.localeCompare(b.key))
+}
+
 /**
  * Fetches a forecast through our proxy. BMKG sends no usable CORS headers, so the
  * browser can never call it directly -- see functions/api/forecast.ts (production)
@@ -92,7 +127,7 @@ export function formatLocalTime(point: ForecastPoint): string {
 export async function fetchForecast(adm4: string, signal?: AbortSignal): Promise<Forecast> {
   const res = await fetch(`/api/forecast?adm4=${encodeURIComponent(adm4)}`, { signal })
   if (!res.ok) {
-    throw new Error(`Gagal mengambil data BMKG (${res.status})`)
+    throw new Error('errors.forecastFetch')
   }
   return parseForecast((await res.json()) as BmkgResponse)
 }

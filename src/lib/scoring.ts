@@ -1,4 +1,5 @@
 import type { ForecastPoint, MoonConditions, NightWindow, Score, SubScore } from '@/types'
+import type { I18nText } from './i18n'
 
 /**
  * Below this, a sub-score is called out to the user as the reason the night is not
@@ -75,7 +76,7 @@ function darknessSubScore(bortle: number): SubScore {
   return {
     key: 'darkness',
     value: DARKNESS_BY_BORTLE[rounded] ?? 0.02,
-    label: `Bortle ${rounded}`,
+    label: { key: 'score.factor.darkness', params: { bortle: rounded } },
   }
 }
 
@@ -83,22 +84,36 @@ function cloudSubScore(cloudCover: number): SubScore {
   return {
     key: 'clouds',
     value: clamp01(1 - cloudCover / 100),
-    label: `Tutupan awan ${Math.round(cloudCover)}%`,
+    label: { key: 'score.factor.clouds', params: { percent: Math.round(cloudCover) } },
   }
 }
 
+/**
+ * How much moonlight actually lands on the night, 0–1.
+ *
+ * Illumination alone is misleading: a full moon that has already set costs nothing.
+ * Weighting by time spent above the horizon is what makes the number useful.
+ *
+ * Exported because the 30-day planning calendar has to rank nights by exactly this
+ * rule. A second copy of it there would be free to drift, and the two views would
+ * eventually disagree about the same night.
+ */
+export function moonInterference(moon: MoonConditions): number {
+  return clamp01(moon.illumination) * clamp01(moon.fractionAboveHorizon)
+}
+
 function moonSubScore(moon: MoonConditions): SubScore {
-  // Illumination alone is misleading: a full moon that has already set costs
-  // nothing. Weighting by time spent above the horizon is what makes this useful.
-  const interference = clamp01(moon.illumination) * clamp01(moon.fractionAboveHorizon)
-  const percent = Math.round(moon.illumination * 100)
+  const interference = moonInterference(moon)
   return {
     key: 'moon',
     value: clamp01(1 - MAX_MOON_PENALTY * interference),
-    label:
-      moon.fractionAboveHorizon < 0.05
-        ? `${moon.phaseName} (${percent}%), di bawah horizon`
-        : `${moon.phaseName} (${percent}%)`,
+    label: {
+      key: moon.fractionAboveHorizon < 0.05 ? 'score.factor.moonDown' : 'score.factor.moon',
+      params: {
+        phase: { key: `moon.phase.${moon.phaseKey}` },
+        percent: Math.round(moon.illumination * 100),
+      },
+    },
   }
 }
 
@@ -139,27 +154,17 @@ export function computeScore(input: {
   }
 }
 
-/** Short Indonesian verdict for a rating, shown next to the stars. */
-export function ratingLabel(rating: number): string {
-  return (
-    {
-      5: 'Sangat baik',
-      4: 'Baik',
-      3: 'Cukup',
-      2: 'Kurang',
-      1: 'Tidak disarankan',
-    }[rating] ?? ''
-  )
+/** One-word verdict for a rating, shown next to the number. */
+export function ratingText(rating: number): I18nText {
+  return { key: `score.rating.${Math.min(Math.max(Math.round(rating), 1), 5)}` }
 }
 
-/** Why the rating is not higher, phrased for display. */
-export function limitingFactorText(score: Score): string | null {
+/** Why the rating is not higher. Null when nothing is holding it back. */
+export function limitingFactorText(score: Score): I18nText | null {
   if (!score.limitingFactor) return null
   const { key, label } = score.limitingFactor
-  const reason = {
-    darkness: 'polusi cahaya',
-    clouds: 'tutupan awan',
-    moon: 'cahaya bulan',
-  }[key]
-  return `Tertahan ${reason} — ${label}`
+  return {
+    key: 'score.limitedBy',
+    params: { reason: { key: `score.reason.${key}` }, detail: label },
+  }
 }

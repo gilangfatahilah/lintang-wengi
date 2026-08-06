@@ -1,4 +1,5 @@
 import type { LatLng } from '@/types'
+import type { I18nText } from './i18n'
 
 /** Contract emitted by scripts/build_lp_grid.py. See public/data/lp-meta.json. */
 export interface LpMeta {
@@ -21,6 +22,17 @@ export interface LpGrid {
 }
 
 /**
+ * Whether the loaded grid is synthesised placeholder data.
+ *
+ * The UI has to say so, and it has to stop saying so once a real raster is in
+ * place -- a stale "not calibrated" caption is its own kind of wrong. Driven by
+ * what the build script recorded rather than by a hand-maintained flag.
+ */
+export function isStubGrid(meta: LpMeta): boolean {
+  return meta.source === 'stub' || meta.source === undefined
+}
+
+/**
  * Bortle class boundaries in mag/arcsec^2 (higher is darker). Values at or above a
  * threshold take that class.
  *
@@ -39,18 +51,6 @@ const BORTLE_THRESHOLDS: ReadonlyArray<readonly [number, number]> = [
   [17.8, 8],
 ]
 
-const BORTLE_LABELS: Record<number, string> = {
-  1: 'Langit gelap sempurna — Milky Way tampak sangat detail',
-  2: 'Langit gelap sejati — Milky Way jelas dan berstruktur',
-  3: 'Langit pedesaan — Milky Way masih tampak jelas',
-  4: 'Peralihan pedesaan/pinggiran — Milky Way tampak di atas kepala',
-  5: 'Langit pinggiran kota — Milky Way samar dan mudah hilang',
-  6: 'Pinggiran kota terang — Milky Way praktis tak terlihat',
-  7: 'Peralihan pinggiran/kota — langit abu terang menyeluruh',
-  8: 'Langit kota — hanya bintang paling terang yang tampak',
-  9: 'Pusat kota — hampir tidak ada bintang yang terlihat',
-}
-
 export function magnitudeToBortle(mag: number): number {
   for (const [limit, cls] of BORTLE_THRESHOLDS) {
     if (mag >= limit) return cls
@@ -58,8 +58,9 @@ export function magnitudeToBortle(mag: number): number {
   return 9
 }
 
-export function bortleLabel(bortle: number): string {
-  return BORTLE_LABELS[bortle] ?? ''
+/** What a Bortle class means in practice, as a key the render layer resolves. */
+export function bortleText(bortle: number): I18nText {
+  return { key: `bortle.${Math.min(Math.max(Math.round(bortle), 1), 9)}` }
 }
 
 function decode(byte: number, meta: LpMeta): number {
@@ -106,11 +107,11 @@ let cached: Promise<LpGrid> | null = null
 export function loadGrid(base = '/data'): Promise<LpGrid> {
   cached ??= Promise.all([
     fetch(`${base}/lp-meta.json`).then((r) => {
-      if (!r.ok) throw new Error(`Gagal memuat metadata polusi cahaya (${r.status})`)
+      if (!r.ok) throw new Error('errors.lpMeta')
       return r.json() as Promise<LpMeta>
     }),
     fetch(`${base}/lp-grid.bin`).then((r) => {
-      if (!r.ok) throw new Error(`Gagal memuat grid polusi cahaya (${r.status})`)
+      if (!r.ok) throw new Error('errors.lpGrid')
       return r.arrayBuffer()
     }),
   ])
@@ -118,9 +119,10 @@ export function loadGrid(base = '/data'): Promise<LpGrid> {
       const data = new Uint8Array(buf)
       const expected = meta.width * meta.height
       if (data.length !== expected) {
-        throw new Error(
-          `Ukuran grid tidak cocok dengan metadata: ${data.length} byte, seharusnya ${expected}.`,
-        )
+        // Not user-facing prose: a size mismatch means the build script and the
+        // app disagree about the contract, which is a developer bug, not a
+        // condition anyone in the field can act on.
+        throw new Error(`lp-grid.bin is ${data.length} bytes, expected ${expected}`)
       }
       return { meta, data }
     })

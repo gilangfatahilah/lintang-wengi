@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Stargazing Spot Finder — a GIS web app for finding astrophotography/stargazing locations in Indonesia. Click a point on the map, get a 1–5 viability score for tonight combining light pollution, BMKG cloud forecast, and moon interference. UI language is Indonesian. See `PLAN.md` for the phased product brief; Phase 1 (MVP) is implemented.
+Lintang Wengi — a GIS web app for finding astrophotography/stargazing locations in Indonesia. Click a point on the map — or search for one, or use your device location — and get a 1–5 viability score for tonight combining light pollution, BMKG cloud forecast, and moon interference. Bilingual EN/ID. See `PLAN.md` for the phased product brief; Phase 1 (MVP) is implemented.
 
 ## Commands
 
@@ -68,6 +68,26 @@ pnpm test               # calibration suite activates automatically
 ```
 
 `src/lib/lightPollution.calibration.test.ts` skips itself while `lp-meta.json` reports `source: "stub"` and activates the moment real data is in place, checking sampled values at places whose sky class is not in dispute. Calibration lives entirely in `BORTLE_THRESHOLDS` in `src/lib/lightPollution.ts` — if a case fails, correct that table and nothing else, cross-checking individual coordinates against lightpollutionmap.info, which reports the same World Atlas values.
+
+## Language
+
+**`src/lib/` must never return a user-facing sentence.** Domain code returns `I18nText` (`{ key, params }`) or a message key; the render layer resolves it. This is the same rule as "lib is pure logic" — a sentence is presentation. `translate` resolves nested `I18nText` params and `Localized` (`{ en, id }`) params, which is how "{phase} ({percent}%)" gets its phase name translated before substitution.
+
+Two mechanisms, on purpose:
+- **UI chrome** → key lookup in `src/locales/{en,id}.ts`. `en.ts` is canonical and `Messages` is a widened `typeof en`, so a key missing from `id.ts` fails `pnpm typecheck`. Do not add `as const` back to `en.ts` — it pins values to literal types and Indonesian can then only repeat the English.
+- **Sky catalogue content** → `{ en, id }` inline in `skyCatalog.ts`, because a name belongs with its coordinates; splitting it into the dictionaries lets an id and a key drift apart silently.
+
+Errors throw message keys (`throw new Error('errors.forecastEmpty')`). `translate` returns unknown keys unchanged, so `t(err.message)` is safe on any string.
+
+Dates go through `Intl.DateTimeFormat(locale, { timeZone: 'UTC', … })` applied to a `shift()`ed instant. The `timeZone: 'UTC'` is load-bearing — `shift()` already moved the instant so its UTC fields read as local wall clock, and letting Intl apply the viewer's zone would shift it twice.
+
+Default is English, but a browser asking for Indonesian gets Indonesian; an explicit choice wins and persists in `localStorage`. That whole rule is `resolveInitialLocale` in `src/lib/i18n.ts`, pure and tested.
+
+## Search and location
+
+`searchPlaces` (`src/lib/search.ts`) ranks the kecamatan index together with `LANDMARKS`. The landmark list exists because the index only has kecamatan names: nobody searches for "Tosari", they search for "Bromo". Landmarks store `name` plus a `kind`, so one entry renders as "Mount Bromo" or "Gunung Bromo" without duplicating the proper noun.
+
+**Geolocation must reject positions outside the light pollution bbox.** `sampleMagnitude` correctly returns null out there, but `findNearest` will still return the closest Indonesian kecamatan from any distance, and the panel would then show a real BMKG forecast for somewhere the user is not. `PlaceSearch.vue` checks the bbox before emitting.
 
 ## Design
 

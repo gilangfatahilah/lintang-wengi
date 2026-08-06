@@ -75,7 +75,7 @@ let cached: Promise<Kecamatan[]> | null = null
 export function loadIndex(url = '/data/wilayah-kec.json'): Promise<Kecamatan[]> {
   cached ??= fetch(url)
     .then((res) => {
-      if (!res.ok) throw new Error(`Gagal memuat indeks wilayah (${res.status})`)
+      if (!res.ok) throw new Error('errors.wilayahIndex')
       return res.json() as Promise<RawIndex>
     })
     .then(parseIndex)

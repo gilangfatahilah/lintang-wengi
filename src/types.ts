@@ -1,5 +1,8 @@
 /** Shared domain types. Kept free of Vue and network concerns on purpose. */
 
+import type { Body } from 'astronomy-engine'
+import type { I18nText, Localized } from '@/lib/i18n'
+
 export interface LatLng {
   lat: number
   lon: number
@@ -67,8 +70,78 @@ export interface MoonConditions {
   fractionAboveHorizon: number
   rise: Date | null
   set: Date | null
-  /** Human-readable phase name in Indonesian. */
-  phaseName: string
+  /** Which of the eight principal phases, as a message key suffix. */
+  phaseKey: MoonPhaseKey
+}
+
+export type MoonPhaseKey =
+  | 'new'
+  | 'waxingCrescent'
+  | 'firstQuarter'
+  | 'waxingGibbous'
+  | 'full'
+  | 'waningGibbous'
+  | 'lastQuarter'
+  | 'waningCrescent'
+
+/**
+ * Where an object is, in the only two forms that matter here.
+ *
+ * Planets move fast enough that their position must be recomputed at every sample
+ * instant; stars and nebulae do not. Hiding that difference behind one type is what
+ * lets a single visibility routine serve the whole catalogue instead of two.
+ */
+export type SkyTarget =
+  | { kind: 'planet'; body: Body }
+  /**
+   * J2000 right ascension in hours and declination in degrees.
+   *
+   * Deliberately not precessed to the epoch of observation: the drift from J2000 to
+   * the 2020s is about 0.4°, well under the resolution of the questions this answers
+   * ("how high", "which way to point"). Adding precession machinery would buy
+   * nothing a photographer could act on.
+   */
+  | { kind: 'fixed'; ra: number; dec: number; magnitude: number | null }
+
+export type SkyCategory = 'core' | 'planet' | 'star' | 'deepsky'
+
+export interface SkyObject {
+  id: string
+  /**
+   * Display name in both languages.
+   *
+   * Carried inline rather than looked up from the message dictionaries: a name and
+   * its coordinates are one fact, and splitting them across files lets an id and a
+   * message key drift apart without anything failing. See the locale-parity test in
+   * `skyCatalog.test.ts`.
+   */
+  name: Localized
+  category: SkyCategory
+  target: SkyTarget
+  /** One line on why it is worth pointing a camera at. */
+  note?: Localized
+}
+
+/** How an object behaves across one night's dark window. */
+export interface ObjectVisibility {
+  /** Highest altitude reached inside the window, degrees. Negative if never up. */
+  maxAltitude: number
+  maxAltitudeTime: Date | null
+  /** Compass azimuth at the peak, degrees clockwise from north. */
+  azimuthAtMax: number
+  /** When the object first/last clears the useful altitude. Null if it never does. */
+  from: Date | null
+  to: Date | null
+  /** Fraction of the dark window spent above the useful altitude, 0–1. */
+  fractionUseful: number
+  /** Apparent magnitude: computed for planets, tabulated for everything else. */
+  magnitude: number | null
+}
+
+/** A catalogue entry paired with what it does tonight. */
+export interface VisibleObject {
+  object: SkyObject
+  visibility: ObjectVisibility
 }
 
 export type SubScoreKey = 'darkness' | 'clouds' | 'moon'
@@ -77,8 +150,8 @@ export interface SubScore {
   key: SubScoreKey
   /** Normalised 0–1, where 1 is ideal. */
   value: number
-  /** Short Indonesian explanation shown in the UI. */
-  label: string
+  /** What this factor is doing, as a key the render layer resolves. */
+  label: I18nText
 }
 
 export interface Score {
