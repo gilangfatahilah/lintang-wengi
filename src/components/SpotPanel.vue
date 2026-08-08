@@ -12,6 +12,7 @@ import SkyTab from './SkyTab.vue'
 import WeatherTab from './WeatherTab.vue'
 import Icon from './Icon.vue'
 import type { IconName } from '@/lib/icons'
+import type { PanelPlacement, PanelState } from '@/lib/panelLayout'
 import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()
@@ -28,7 +29,12 @@ const props = defineProps<{
   distanceKm: number | null
   /** True while the light pollution grid is placeholder data. */
   lpStub: boolean
+  panelState: PanelState
+  /** Only affects which way the collapse arrows point. */
+  panelPlacement: PanelPlacement
 }>()
+
+defineEmits<{ minimize: []; maximize: [] }>()
 
 type TabKey = 'skor' | 'langit' | 'cuaca'
 
@@ -61,8 +67,31 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
 <template>
   <aside class="panel">
     <header class="head">
-      <h2 class="place">{{ placeName }}</h2>
-      <p class="numeric coords">{{ coords }}</p>
+      <div class="titles">
+        <h2 class="place">{{ placeName }}</h2>
+        <p class="numeric coords">{{ coords }}</p>
+      </div>
+      <div class="window-controls">
+        <button
+          type="button"
+          :class="{ stacked: panelPlacement === 'below' }"
+          :aria-label="t('panel.minimize')"
+          :title="t('panel.minimize')"
+          @click="$emit('minimize')"
+        >
+          <Icon name="collapse" :size="1.15" />
+        </button>
+        <button
+          type="button"
+          :class="{ stacked: panelPlacement === 'below' }"
+          :aria-pressed="panelState === 'maximized'"
+          :aria-label="t(panelState === 'maximized' ? 'panel.restore' : 'panel.maximize')"
+          :title="t(panelState === 'maximized' ? 'panel.restore' : 'panel.maximize')"
+          @click="$emit('maximize')"
+        >
+          <Icon :name="panelState === 'maximized' ? 'restore' : 'expand'" :size="1.15" />
+        </button>
+      </div>
     </header>
 
     <nav class="tabs" role="tablist" :aria-label="t('panel.tabsLabel')">
@@ -139,10 +168,62 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
   overflow-y: auto;
 }
 
+/*
+ * A readout column stops getting easier to read past about this width, and the
+ * figures start scaling into decoration: NightBar keeps a uniform aspect ratio on
+ * purpose, so a panel dragged to 1200px rendered a 400px-tall bar with type to
+ * match. Capping here rather than on the graphic keeps every tab in one column.
+ */
+.panel > * {
+  width: 100%;
+  max-width: 46rem;
+  margin-inline: auto;
+}
+
 .head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.titles {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
+  min-width: 0;
+}
+
+.window-controls {
+  display: flex;
+  flex: none;
+  gap: 0.125rem;
+  /* Pulled up to sit on the title's cap height rather than below it. */
+  margin-top: -0.125rem;
+}
+
+.window-controls button {
+  display: flex;
+  padding: 0.25rem;
+  color: var(--haze);
+}
+
+.window-controls button:hover,
+.window-controls button[aria-pressed='true'] {
+  color: var(--azure);
+}
+
+/*
+ * Beside the map the panel is to the right, so the arrows point that way as drawn.
+ * Stacked, the panel is below, and the same glyphs turn a quarter turn to keep
+ * meaning "toward the edge the panel lives on".
+ *
+ * Driven by a class on the button rather than by a `:global(.body[data-placement])`
+ * selector: that form compiled to a rule matching `.body` itself and rotated the
+ * entire application layout ninety degrees on narrow screens.
+ */
+.window-controls button.stacked .icon {
+  transform: rotate(90deg);
 }
 
 .place {

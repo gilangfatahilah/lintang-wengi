@@ -70,6 +70,10 @@ export const en = {
     attributionAgency: '— Meteorology, Climatology and Geophysical Agency of Indonesia',
     lpStub: 'Light pollution: placeholder data, not calibrated.',
     lpReal: 'Light pollution: World Atlas 2015 — Falchi et al.',
+    minimize: 'Collapse the panel',
+    maximize: 'Fill the window',
+    restore: 'Restore the panel',
+    resize: 'Resize the panel',
   },
 
   score: {

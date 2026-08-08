@@ -18,6 +18,7 @@ const container = ref<HTMLDivElement | null>(null)
 const map = shallowRef<maplibregl.Map | null>(null)
 const marker = shallowRef<maplibregl.Marker | null>(null)
 const overlayVisible = ref(true)
+let resizeObserver: ResizeObserver | null = null
 
 /**
  * CARTO's dark basemap, free for use with attribution. A dark base is not just a
@@ -82,6 +83,15 @@ onMounted(() => {
   })
   map.value = m
 
+  /*
+   * MapLibre only watches the window, not its own container. Once the panel became
+   * resizable the container changes size without the window doing anything, and an
+   * unresized map renders a stretched canvas with the pointer landing in the wrong
+   * place -- clicks would return coordinates for somewhere the user did not click.
+   */
+  resizeObserver = new ResizeObserver(() => m.resize())
+  resizeObserver.observe(container.value)
+
   // Dev-only handle, so a console or a browser-driving script can convert between
   // coordinates and pixels. Stripped from production builds.
   if (import.meta.env.DEV) {
@@ -90,6 +100,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
   map.value?.remove()
   map.value = null
 })

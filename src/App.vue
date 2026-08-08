@@ -15,8 +15,10 @@ import { computeScore, cloudCoverForNight } from '@/lib/scoring'
 import MapView from './components/MapView.vue'
 import PlaceSearch from './components/PlaceSearch.vue'
 import SpotPanel from './components/SpotPanel.vue'
+import PanelResizer from './components/PanelResizer.vue'
 import Icon from './components/Icon.vue'
 import { provideI18n } from '@/composables/useI18n'
+import { usePanelLayout } from '@/composables/usePanelLayout'
 import { LOCALES } from '@/lib/i18n'
 
 // Created here so every descendant shares one reactive locale.
@@ -37,6 +39,24 @@ const forecastError = ref<string | null>(null)
 
 const fieldMode = ref(false)
 const mapView = ref<InstanceType<typeof MapView> | null>(null)
+
+// Named apart from the domain refs above because these are all about the shape of
+// the window, not about the spot being looked at.
+const {
+  state: panelState,
+  placement: panelPlacement,
+  size: panelSize,
+  min: panelMin,
+  max: panelMax,
+  dragging: panelDragging,
+  frame: panelFrame,
+  startDrag: panelDragStart,
+  nudge: panelNudge,
+  setSize: panelSetSize,
+  minimize: panelMinimize,
+  maximize: panelMaximize,
+  restore: panelRestore,
+} = usePanelLayout()
 
 /** Cancels an in-flight forecast when the user clicks somewhere else. */
 let pending: AbortController | null = null
@@ -165,7 +185,13 @@ watch(fieldMode, (on) => {
 
     <p v-if="loadError" class="load-error">{{ loadError }}</p>
 
-    <main class="body">
+    <main
+      ref="panelFrame"
+      class="body"
+      :data-panel="panelState"
+      :data-placement="panelPlacement"
+      :style="{ '--panel-size': `${panelSize}px` }"
+    >
       <div class="map-area">
         <MapView
           ref="mapView"
@@ -176,23 +202,60 @@ watch(fieldMode, (on) => {
         <PlaceSearch :index="index" :lp-meta="grid?.meta ?? null" @pick="pickAndFly" />
       </div>
 
-      <SpotPanel
-        v-if="selected"
-        :point="selected"
-        :bortle="bortle"
-        :window="window_"
-        :moon="moon"
-        :forecast="forecast"
-        :score="score"
-        :forecast-state="forecastState"
-        :forecast-error="forecastError"
-        :distance-km="distanceKm"
-        :lp-stub="lpStub"
+      <PanelResizer
+        v-if="panelState === 'normal'"
+        :placement="panelPlacement"
+        :size="panelSize"
+        :min="panelMin"
+        :max="panelMax"
+        :dragging="panelDragging"
+        @start="panelDragStart"
+        @nudge="panelNudge"
+        @jump="(edge) => panelSetSize(edge === 'max' ? panelMax : panelMin)"
       />
-      <aside v-else class="empty">
-        <p class="lede">{{ t('app.tagline') }}</p>
-        <p class="sub">{{ t('app.intro') }}</p>
+
+      <!-- Minimized: a rail rather than nothing. The verdict is the one thing worth
+           keeping while you look at the map, and it costs a single digit of space. -->
+      <aside v-if="panelState === 'minimized'" class="rail">
+        <button
+          type="button"
+          class="rail-restore"
+          :class="{ stacked: panelPlacement === 'below' }"
+          :aria-label="t('panel.restore')"
+          :title="t('panel.restore')"
+          @click="panelRestore"
+        >
+          <Icon name="expand" :size="1.2" />
+        </button>
+        <p v-if="score" class="rail-score numeric">
+          <span class="rail-value">{{ score.rating }}</span>
+          <span class="rail-denom">/5</span>
+        </p>
       </aside>
+
+      <template v-else>
+        <SpotPanel
+          v-if="selected"
+          :point="selected"
+          :bortle="bortle"
+          :window="window_"
+          :moon="moon"
+          :forecast="forecast"
+          :score="score"
+          :forecast-state="forecastState"
+          :forecast-error="forecastError"
+          :distance-km="distanceKm"
+          :lp-stub="lpStub"
+          :panel-state="panelState"
+          :panel-placement="panelPlacement"
+          @minimize="panelMinimize"
+          @maximize="panelMaximize"
+        />
+        <aside v-else class="empty">
+          <p class="lede">{{ t('app.tagline') }}</p>
+          <p class="sub">{{ t('app.intro') }}</p>
+        </aside>
+      </template>
     </main>
   </div>
 </template>
@@ -293,11 +356,33 @@ watch(fieldMode, (on) => {
   min-width: 0;
 }
 
+/*
+ * Three tracks: map, separator, panel. The separator is a real grid item rather than
+ * an overlay so dragging it moves the boundary itself, and the map never sits under
+ * the panel — a translucent overlay would let light pollution colour show through
+ * the readout, which is the one place that has to stay legible.
+ *
+ * `--panel-size` is written by usePanelLayout in px, already clamped.
+ */
 .body {
   display: grid;
-  grid-template-columns: 1fr var(--panel-width);
+  grid-template-columns: minmax(0, 1fr) auto var(--panel-size, 25rem);
   min-height: 0;
   flex: 1;
+}
+
+/*
+ * Two tracks in the other two states, because the separator is not rendered there --
+ * there is no boundary to drag when the map is collapsed or the panel is a rail.
+ * Keeping three tracks here silently left the panel in the middle `auto` track and
+ * sized it to its content instead of filling the window.
+ */
+.body[data-panel='minimized'] {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.body[data-panel='maximized'] {
+  grid-template-columns: 0 minmax(0, 1fr);
 }
 
 .body > :last-child {
@@ -306,8 +391,61 @@ watch(fieldMode, (on) => {
   min-height: 0;
 }
 
+/* The map's own element must be allowed to collapse, or the grid keeps its width. */
+.body[data-panel='maximized'] .map-area {
+  overflow: hidden;
+}
+
 .empty {
   padding: 1.5rem 1.25rem;
+}
+
+/*
+ * The minimized rail. It keeps the rating rather than going blank: the whole reason
+ * to minimize is to look at the map, and the verdict is what you would otherwise be
+ * reopening the panel to re-read.
+ */
+.rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.5rem;
+  width: 2.75rem;
+}
+
+.rail-restore {
+  display: flex;
+  padding: 0.25rem;
+  color: var(--haze);
+}
+
+.rail-restore:hover {
+  color: var(--azure);
+}
+
+/* Stacked, the panel reopens upward, so the arrow has to say so. */
+.rail-restore.stacked .icon {
+  transform: rotate(90deg);
+}
+
+.rail-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  line-height: 1;
+}
+
+.rail-value {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.rail-denom {
+  font-size: 0.625rem;
+  color: var(--haze);
 }
 
 .lede {
@@ -324,15 +462,43 @@ watch(fieldMode, (on) => {
   color: var(--haze);
 }
 
+/*
+ * Breakpoint mirrored by STACKED_QUERY in usePanelLayout.ts, which is what decides
+ * whether a drag is measured against width or height. They have to agree.
+ */
 @media (max-width: 52rem) {
   .body {
-    grid-template-columns: 1fr;
-    grid-template-rows: 45vh 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto var(--panel-size, 45vh);
+  }
+
+  .body[data-panel='minimized'] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .body[data-panel='maximized'] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 0 minmax(0, 1fr);
   }
 
   .body > :last-child {
     border-left: none;
     border-top: var(--rule);
+  }
+
+  /* Stacked, the rail runs along the bottom instead of down the side. */
+  .rail {
+    flex-direction: row;
+    justify-content: space-between;
+    width: auto;
+    padding: 0.5rem 1rem;
+  }
+
+  .rail-score {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.125rem;
   }
 }
 </style>

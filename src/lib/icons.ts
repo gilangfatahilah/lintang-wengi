@@ -56,6 +56,9 @@ export type IconName =
   | 'close'
   | 'layers'
   | 'torch'
+  | 'collapse'
+  | 'expand'
+  | 'restore'
 
 /** Shorthand for the stroked parts of otherwise-filled glyphs. */
 const S = 'fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"'
@@ -211,6 +214,29 @@ export const ICONS: Record<IconName, string> = {
   torch:
     '<path d="M8.4 2.2h7.2v4.6H8.4z"/>' +
     '<path d="M7.2 8.2h9.6L14 21.8h-4z" opacity="0.55"/>',
+
+  /*
+   * The panel controls read as what happens to the panel, not as generic window
+   * chrome: the filled bar is the edge the panel lives against, and the arrow says
+   * which way the panel moves. Named for what they *draw* rather than for the action
+   * they trigger, because naming them `minimize`/`maximize` is exactly how they
+   * ended up pointing the wrong way -- collapsing a right-hand panel moves it
+   * toward the right edge, not away from it.
+   *
+   * Drawn for the `beside` case and rotated a quarter turn when the panel is below.
+   */
+  collapse:
+    '<rect x="17.4" y="3" width="3.6" height="18" rx="0.6"/>' +
+    `<g ${S} stroke-width="1.9"><path d="M3.4 12h10M9 7.2 13.8 12 9 16.8"/></g>`,
+
+  expand:
+    '<rect x="17.4" y="3" width="3.6" height="18" rx="0.6"/>' +
+    `<g ${S} stroke-width="1.9"><path d="M13.4 12H3.4M8 7.2 3.2 12l4.8 4.8"/></g>`,
+
+  restore:
+    '<rect x="3" y="3" width="3.6" height="18" rx="0.6"/>' +
+    '<rect x="17.4" y="3" width="3.6" height="18" rx="0.6"/>' +
+    `<g ${S} stroke-width="1.9"><path d="M9.6 12h4.8"/></g>`,
 }
 
 /*

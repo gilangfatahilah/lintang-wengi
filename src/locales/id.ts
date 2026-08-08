@@ -76,6 +76,10 @@ export const id: Messages = {
     attributionAgency: '— Badan Meteorologi, Klimatologi, dan Geofisika',
     lpStub: 'Polusi cahaya: data sementara, belum dikalibrasi.',
     lpReal: 'Polusi cahaya: World Atlas 2015 — Falchi dkk.',
+    minimize: 'Ciutkan panel',
+    maximize: 'Penuhi layar',
+    restore: 'Kembalikan panel',
+    resize: 'Ubah ukuran panel',
   },
 
   score: {

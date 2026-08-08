@@ -110,3 +110,21 @@ The app is a field instrument, not a web page: used outdoors at night by people 
 `MoonGlyph.vue` draws the actual phase from `illumination`, so the picture cannot disagree with the number printed beside it. The geometry lives in `src/lib/moonShape.ts` because it got the terminator's curvature backwards once and rendered a full moon as a black disc — a component cannot be unit-tested into admitting that.
 
 `NightBar.vue` is the signature element: dark window, cloud cover, and moon presence on one time axis. It answers *when* to go, which is the decision being made. Its SVG uses a uniform aspect ratio — an earlier `preserveAspectRatio="none"` distorted all text and must not come back.
+
+## Panel layout
+
+The readout panel is resizable, collapsible to a rail, and expandable to fill the window. All the arithmetic — clamping, the stored-preference fallback, pointer-to-size, keyboard steps, state toggles — is pure and lives in `src/lib/panelLayout.ts`; `usePanelLayout` only holds the reactive state, the listeners, and localStorage.
+
+Sizes are stored in **pixels and re-clamped against the live container**, not as a fraction of it. The panel has an absolute minimum below which the forecast table stops laying out, and the map has one below which it stops being pickable; a fraction cannot express either. `clampPanelSize` also has to handle the two minimums not both fitting, because otherwise its lower and upper bounds cross and it silently returns whichever was applied last.
+
+Three things that will bite:
+
+- **`grid-template-columns` must match the number of children actually rendered.** The separator is only rendered in the `normal` state, so the minimized and maximized states declare two tracks, not three. Leaving three left the panel in the middle `auto` track, sized to its content instead of filling the window.
+- **The `@media (max-width: 52rem)` breakpoint exists twice** — in `App.vue` and as `STACKED_QUERY` in `usePanelLayout.ts`. CSS decides the layout, JS decides whether a drag is measured against width or height. They have to agree.
+- **MapLibre only watches the window, not its container.** `MapView` runs a `ResizeObserver` calling `map.resize()`. Without it a resized panel leaves a stretched canvas whose clicks return coordinates for somewhere the user did not click.
+
+`SpotPanel`'s content is capped at 46rem and centred. Past that a readout column stops being easier to read and `NightBar`, which keeps a uniform aspect ratio on purpose, renders as a 400px-tall graphic with type to match.
+
+**Do not use `:global(...)` as the first compound selector in a scoped block.** `:global(.body[data-placement='below']) .window-controls .icon { transform: rotate(90deg) }` compiled to a rule matching `.body` itself and rotated the entire application ninety degrees on narrow screens — a total layout failure that `pnpm build` and every unit test passed straight through. Pass the state down as a prop and put the class where it belongs.
+
+The collapse and expand glyphs are named for **what they draw**, not for the action they trigger. Naming them `minimize`/`maximize` is precisely how they ended up pointing the wrong way: collapsing a right-hand panel moves it *toward* the right edge, not away from it.
