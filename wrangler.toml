@@ -1,4 +1,7 @@
-name = "ssf"
+# This is the Pages project name, so it is also the hostname: lintang-wengi.pages.dev.
+# Changing it after the first deploy creates a second project rather than renaming
+# the first, so it has to be right before that deploy, not after.
+name = "lintang-wengi"
 pages_build_output_dir = "dist"
 
 # Pinning this keeps the Workers runtime behaviour identical between local
