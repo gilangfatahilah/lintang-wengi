@@ -126,6 +126,7 @@ export const en = {
       visible: 'Visible',
     },
     nothingUp: 'Nothing from the catalogue clears a useful altitude tonight.',
+    magnitudeTitle: 'Magnitude {value}',
     belowHorizon: 'Below the horizon',
     noWindow: 'The dark window cannot be worked out for this point.',
     visibleTonight: 'Visible tonight',

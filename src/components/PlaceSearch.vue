@@ -11,7 +11,9 @@ import type { Kecamatan, LatLng } from '@/types'
 import type { LpMeta } from '@/lib/lightPollution'
 import { LANDMARKS } from '@/lib/landmarks'
 import { searchPlaces, type SearchResult } from '@/lib/search'
+import { LANDMARK_ICONS, type IconName } from '@/lib/icons'
 import { useI18n } from '@/composables/useI18n'
+import Icon from './Icon.vue'
 
 const { t } = useI18n()
 
@@ -42,6 +44,11 @@ function label(r: SearchResult): string {
 
 function kindLabel(r: SearchResult): string {
   return r.landmarkKind ? t(`search.kindLabel.${r.landmarkKind}`) : t('search.district')
+}
+
+/** A landmark shows what it is; a kecamatan shows that it is a place on the map. */
+function icon(r: SearchResult): IconName {
+  return r.landmarkKind ? LANDMARK_ICONS[r.landmarkKind] : 'district'
 }
 
 function choose(r: SearchResult) {
@@ -149,15 +156,15 @@ function useMyLocation() {
       />
       <button
         v-if="query"
-        class="icon"
+        class="ctl"
         type="button"
         :aria-label="t('search.clear')"
         @click="clear"
       >
-        ×
+        <Icon name="close" />
       </button>
       <button
-        class="icon locate"
+        class="ctl locate"
         type="button"
         :disabled="locating"
         :aria-label="t('search.useMyLocation')"
@@ -165,7 +172,7 @@ function useMyLocation() {
         @click="useMyLocation"
       >
         <span v-if="locating" class="spinner" aria-hidden="true"></span>
-        <span v-else aria-hidden="true">◎</span>
+        <Icon v-else name="crosshair" />
       </button>
     </div>
 
@@ -183,6 +190,7 @@ function useMyLocation() {
         @mousedown.prevent="choose(r)"
         @mouseenter="activeIndex = i"
       >
+        <Icon :name="icon(r)" :size="1.25" class="kind" />
         <span class="name">{{ label(r) }}</span>
         <span class="meta">{{ kindLabel(r) }} · {{ r.secondary }}</span>
       </li>
@@ -229,7 +237,9 @@ input::-webkit-search-cancel-button {
   display: none;
 }
 
-.icon {
+.ctl {
+  display: flex;
+  align-items: center;
   flex: none;
   padding: 0.375rem 0.5rem;
   font-size: 0.875rem;
@@ -237,7 +247,7 @@ input::-webkit-search-cancel-button {
   color: var(--haze);
 }
 
-.icon:hover:not(:disabled) {
+.ctl:hover:not(:disabled) {
   color: var(--star);
 }
 
@@ -249,8 +259,8 @@ input::-webkit-search-cancel-button {
   display: block;
   width: 0.75rem;
   height: 0.75rem;
-  border: 1.5px solid var(--ember-dim);
-  border-top-color: var(--ember);
+  border: 1.5px solid var(--azure-dim);
+  border-top-color: var(--azure);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -285,12 +295,25 @@ input::-webkit-search-cancel-button {
   border: var(--rule);
 }
 
+/* The glyph spans both text rows so it reads as belonging to the whole result
+   rather than to the name line. */
 .results li {
-  display: flex;
-  flex-direction: column;
-  gap: 0.0625rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.5rem;
+  row-gap: 0.0625rem;
   padding: 0.4375rem 0.625rem;
   cursor: pointer;
+}
+
+.kind {
+  grid-row: 1 / 3;
+  align-self: center;
+  color: var(--haze);
+}
+
+.results li.active .kind {
+  color: var(--azure);
 }
 
 .results li + li {
@@ -298,11 +321,12 @@ input::-webkit-search-cancel-button {
 }
 
 .results li.active {
-  background: var(--panel-raised);
-  box-shadow: inset 2px 0 0 var(--ember);
+  background: var(--brand);
+  box-shadow: inset 2px 0 0 var(--azure);
 }
 
 .results li.empty {
+  display: block;
   cursor: default;
   font-family: var(--font-mono);
   font-size: 0.6875rem;

@@ -4,6 +4,7 @@ import maplibregl, { type StyleSpecification } from 'maplibre-gl'
 import type { LatLng } from '@/types'
 import type { LpMeta } from '@/lib/lightPollution'
 import { useI18n } from '@/composables/useI18n'
+import Icon from './Icon.vue'
 
 const { t } = useI18n()
 
@@ -140,6 +141,7 @@ watch(overlayVisible, (visible) => {
       :aria-pressed="overlayVisible"
       @click="overlayVisible = !overlayVisible"
     >
+      <Icon name="layers" />
       {{ t('map.lightPollution') }}: {{ overlayVisible ? t('map.shown') : t('map.hidden') }}
     </button>
   </div>
@@ -156,6 +158,9 @@ watch(overlayVisible, (visible) => {
 }
 
 .overlay-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
   position: absolute;
   /* Below the search field, which owns the top-left corner. */
   bottom: 0.75rem;
@@ -170,7 +175,15 @@ watch(overlayVisible, (visible) => {
 }
 
 .overlay-toggle:hover {
-  border-color: var(--ember-dim);
+  border-color: var(--azure-dim);
+}
+
+/* Narrow enough that MapLibre's attribution bar reaches across into the toggle, so
+   the toggle steps up out of its row rather than being read through it. */
+@media (max-width: 32rem) {
+  .overlay-toggle {
+    bottom: 2.25rem;
+  }
 }
 </style>
 
@@ -179,7 +192,7 @@ watch(overlayVisible, (visible) => {
 .spot-marker {
   width: 18px;
   height: 18px;
-  border: 1.5px solid var(--ember);
+  border: 1.5px solid var(--azure);
   border-radius: 50%;
   box-shadow: 0 0 0 1px rgba(7, 8, 11, 0.8);
 }
@@ -190,7 +203,7 @@ watch(overlayVisible, (visible) => {
   width: 2px;
   height: 2px;
   margin: 6.5px auto;
-  background: var(--ember);
+  background: var(--azure);
   border-radius: 50%;
 }
 

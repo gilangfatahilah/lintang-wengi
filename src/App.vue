@@ -15,6 +15,7 @@ import { computeScore, cloudCoverForNight } from '@/lib/scoring'
 import MapView from './components/MapView.vue'
 import PlaceSearch from './components/PlaceSearch.vue'
 import SpotPanel from './components/SpotPanel.vue'
+import Icon from './components/Icon.vue'
 import { provideI18n } from '@/composables/useI18n'
 import { LOCALES } from '@/lib/i18n'
 
@@ -156,6 +157,7 @@ watch(fieldMode, (on) => {
         :title="t('app.fieldModeHint')"
         @click="fieldMode = !fieldMode"
       >
+          <Icon name="torch" />
           {{ t('app.fieldMode') }}
         </button>
       </div>
@@ -214,16 +216,17 @@ watch(fieldMode, (on) => {
 
 /*
  * The logo ships as a single-colour navy silhouette on transparency. Drawn as an
- * image it would be near-invisible on --panel and would stay blue in field mode,
- * so it is used as a mask and filled from the palette instead: warm by default,
- * red the moment "Mode lapangan" retunes --star. No second asset, no blue-white.
+ * image its own #193667 would sit at 1.6:1 against --panel and be near-invisible,
+ * and it would stay blue in field mode. So it is used as a mask and filled from the
+ * palette: --azure is that same navy lifted to a readable value, and it turns red
+ * the moment "Mode lapangan" remaps the token. One asset, correct in both modes.
  */
 .logo {
   flex: none;
   margin: 0;
   height: 1.5rem;
   aspect-ratio: 1735 / 801;
-  background-color: var(--star);
+  background-color: var(--azure);
   -webkit-mask: url("/logo-mark.png") center / contain no-repeat;
   mask: url("/logo-mark.png") center / contain no-repeat;
 }
@@ -258,6 +261,9 @@ watch(fieldMode, (on) => {
 }
 
 .field-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
   padding: 0.375rem 0.625rem;
   border: var(--rule);
   font-family: var(--font-mono);
@@ -266,9 +272,10 @@ watch(fieldMode, (on) => {
   color: var(--haze);
 }
 
+/* A mode indicator, not a warning: this is the state the app is meant to be used in. */
 .field-toggle[aria-pressed="true"] {
-  color: var(--ember);
-  border-color: var(--ember-dim);
+  color: var(--azure);
+  border-color: var(--azure-dim);
 }
 
 .load-error {

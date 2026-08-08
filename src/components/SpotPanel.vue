@@ -10,6 +10,8 @@ import { approximateOffsetMinutes } from '@/lib/time'
 import ScoreTab from './ScoreTab.vue'
 import SkyTab from './SkyTab.vue'
 import WeatherTab from './WeatherTab.vue'
+import Icon from './Icon.vue'
+import type { IconName } from '@/lib/icons'
 import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()
@@ -30,10 +32,10 @@ const props = defineProps<{
 
 type TabKey = 'skor' | 'langit' | 'cuaca'
 
-const TABS: ReadonlyArray<{ key: TabKey; labelKey: string }> = [
-  { key: 'skor', labelKey: 'panel.tabs.score' },
-  { key: 'langit', labelKey: 'panel.tabs.sky' },
-  { key: 'cuaca', labelKey: 'panel.tabs.weather' },
+const TABS: ReadonlyArray<{ key: TabKey; labelKey: string; icon: IconName }> = [
+  { key: 'skor', labelKey: 'panel.tabs.score', icon: 'gauge' },
+  { key: 'langit', labelKey: 'panel.tabs.sky', icon: 'galaxy' },
+  { key: 'cuaca', labelKey: 'panel.tabs.weather', icon: 'cloud' },
 ]
 
 /**
@@ -73,6 +75,7 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
         :class="{ on: active === tab.key }"
         @click="active = tab.key"
       >
+        <Icon :name="tab.icon" :size="1.3" />
         {{ t(tab.labelKey) }}
       </button>
     </nav>
@@ -120,7 +123,9 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
         </a>
         {{ t('panel.attributionAgency') }}
       </p>
-      <p class="fine">{{ lpStub ? t('panel.lpStub') : t('panel.lpReal') }}</p>
+      <p class="fine" :class="{ stub: lpStub }">
+        {{ lpStub ? t('panel.lpStub') : t('panel.lpReal') }}
+      </p>
     </footer>
   </aside>
 </template>
@@ -163,6 +168,9 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
 
 .tabs button {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
   padding: 0 0 0.4375rem;
   font-family: var(--font-mono);
   font-size: 0.6875rem;
@@ -182,7 +190,7 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
   position: absolute;
   inset: auto 0 -1px;
   height: 2px;
-  background: var(--ember);
+  background: var(--azure);
 }
 
 .attribution {
@@ -199,11 +207,17 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
 
 .attribution a {
   color: var(--star);
-  text-decoration-color: var(--ember-dim);
+  text-decoration-color: var(--azure-dim);
   text-underline-offset: 2px;
 }
 
 .fine {
+  color: var(--haze);
+}
+
+/* Only a caveat while the grid is placeholder data; once it is real this is a
+   statement of provenance and has no business looking like a warning. */
+.fine.stub {
   color: var(--ember-dim);
 }
 </style>

@@ -24,7 +24,10 @@ export interface BmkgResponse {
         tcc: number
         t: number
         hu: number
+        /** Numeric condition code; the stable half of the condition. */
+        weather: number
         weather_desc: string
+        weather_desc_en: string
       }>
     >
   }>
@@ -59,7 +62,10 @@ export function parseForecast(raw: BmkgResponse): Forecast {
     cloudCover: p.tcc,
     temp: p.t,
     humidity: p.hu,
-    description: p.weather_desc,
+    // Both languages arrive in the same payload. Keeping only `weather_desc` meant
+    // the condition column stayed Indonesian while the rest of the UI was English.
+    description: { en: p.weather_desc_en ?? p.weather_desc, id: p.weather_desc },
+    weatherCode: p.weather,
   }))
 
   points.sort((a, b) => a.time.getTime() - b.time.getTime())

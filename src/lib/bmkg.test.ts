@@ -68,7 +68,8 @@ describe('formatLocalTime', () => {
       cloudCover: 0,
       temp: 0,
       humidity: 0,
-      description: '',
+      description: { en: '', id: '' },
+      weatherCode: 0,
     }
     expect(formatLocalTime(point)).toBe('14:00')
   })
@@ -81,7 +82,8 @@ describe('formatLocalTime', () => {
       cloudCover: 0,
       temp: 0,
       humidity: 0,
-      description: '',
+      description: { en: '', id: '' },
+      weatherCode: 0,
     }
     expect(formatLocalTime(point)).toBe('02:00')
   })
@@ -122,7 +124,8 @@ describe('groupByLocalDay', () => {
       cloudCover: 0,
       temp: 0,
       humidity: 0,
-      description: '',
+      description: { en: '', id: '' },
+      weatherCode: 0,
     })
     const grouped = groupByLocalDay([point('2026-08-05T17:00:00Z'), point('2026-08-05T20:00:00Z')])
 
@@ -139,7 +142,8 @@ describe('groupByLocalDay', () => {
         cloudCover: 0,
         temp: 0,
         humidity: 0,
-        description: '',
+        description: { en: '', id: '' },
+        weatherCode: 0,
       },
     ])
     // Each language keeps its own conventional order -- month-first in English,

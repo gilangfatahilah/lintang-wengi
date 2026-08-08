@@ -132,6 +132,7 @@ export const id: Messages = {
       visible: 'Terlihat',
     },
     nothingUp: 'Tidak ada objek katalog yang cukup tinggi malam ini.',
+    magnitudeTitle: 'Magnitudo {value}',
     belowHorizon: 'Di bawah horizon',
     noWindow: 'Jendela malam tidak dapat dihitung untuk titik ini.',
     visibleTonight: 'Terlihat malam ini',

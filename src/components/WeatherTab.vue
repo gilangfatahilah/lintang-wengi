@@ -10,9 +10,11 @@ import { computed } from 'vue'
 import type { Forecast, NightWindow } from '@/types'
 import { groupByLocalDay } from '@/lib/bmkg'
 import { formatAtOffset, timezoneLabel } from '@/lib/time'
+import { weatherIcon } from '@/lib/weather'
 import { useI18n } from '@/composables/useI18n'
+import Icon from './Icon.vue'
 
-const { t } = useI18n()
+const { t, pick, locale } = useI18n()
 
 const props = defineProps<{
   forecast: Forecast | null
@@ -28,8 +30,10 @@ function inDarkWindow(time: Date): boolean {
   return time >= props.window.start && time <= props.window.end
 }
 
+// The locale has to be passed: `groupByLocalDay` builds each day's label itself and
+// defaults to English, so leaving it off left "Sat, Aug 8" above an Indonesian table.
 const days = computed(() =>
-  props.forecast ? groupByLocalDay(props.forecast.points) : [],
+  props.forecast ? groupByLocalDay(props.forecast.points, locale.value) : [],
 )
 </script>
 
@@ -72,7 +76,10 @@ const days = computed(() =>
                 <td class="numeric cover">{{ Math.round(p.cloudCover) }}%</td>
                 <td class="numeric">{{ Math.round(p.temp) }}°</td>
                 <td class="numeric">{{ Math.round(p.humidity) }}%</td>
-                <td class="desc">{{ p.description }}</td>
+                <td class="desc">
+                  <Icon :name="weatherIcon(p.weatherCode)" class="wx" />
+                  {{ pick(p.description) }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -144,7 +151,8 @@ tr.dark td {
   margin-right: 0.25rem;
   font-size: 0.5rem;
   vertical-align: 0.15em;
-  color: var(--ember);
+  /* Emphasis, not alarm: these are the rows that decide the night. */
+  color: var(--azure);
 }
 
 .cover {
@@ -154,5 +162,18 @@ tr.dark td {
 .desc {
   white-space: normal;
   min-width: 8rem;
+}
+
+/* Sized against the row rather than the caption text, so the column of glyphs
+   reads as a column when the eye runs down it. */
+.wx {
+  margin-right: 0.375rem;
+  font-size: 1.0625rem;
+  color: var(--star);
+  opacity: 0.75;
+}
+
+tr.dark .wx {
+  opacity: 1;
 }
 </style>

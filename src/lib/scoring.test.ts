@@ -130,7 +130,8 @@ describe('cloudCoverForNight', () => {
     cloudCover,
     temp: 25,
     humidity: 80,
-    description: '',
+    description: { en: '', id: '' },
+    weatherCode: 0,
   })
 
   it('averages only the points inside the night window', () => {

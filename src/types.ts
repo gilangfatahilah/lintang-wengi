@@ -37,7 +37,18 @@ export interface ForecastPoint {
   /** Temperature, °C. */
   temp: number
   humidity: number
-  description: string
+  /**
+   * BMKG's own wording, both languages, because they ship both in the same payload.
+   * Translating "Cerah Berawan" ourselves would be inventing a second vocabulary for
+   * something the source has already named.
+   */
+  description: Localized
+  /**
+   * BMKG's numeric condition code. Kept alongside the text because it is the only
+   * part of the condition that is stable enough to key an icon off -- the wording
+   * varies, the code does not.
+   */
+  weatherCode: number
 }
 
 export interface Forecast {

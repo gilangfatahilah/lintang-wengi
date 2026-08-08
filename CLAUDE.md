@@ -38,6 +38,10 @@ Click flow: everything computable offline (light pollution sample, dark window, 
 
 **BMKG's `data[].cuaca` is a nested array** (one inner array per day), and the first day is partial — a real response returns ~20 points, not 3×8. `src/lib/__fixtures__/bmkg-kemayoran.json` is a genuine captured response; test parsing against it rather than a hand-written mock.
 
+**The published BMKG weather-code table is wrong, and `src/lib/weather.ts` documents where.** Sampling 984 forecast points across 52 kecamatan, cross-checked against the icon slug BMKG ships inside each point (`image`, e.g. `.../cuaca/cerah-am.svg`), contradicts the circulated list on three codes: `10` is *Udara Kabur* not *Asap*, `61` is *Hujan Ringan* not *Hujan Sedang*, and `17` (*Petir*) is not on the list at all. Codes observed live win over the documented table; the rest are marked as unverified in that file. Re-sample before trusting any addition — the sample above was August, so no heavy-rain code could appear.
+
+**The response carries `weather_desc_en` alongside `weather_desc`.** `ForecastPoint.description` is therefore `Localized`, not a string. Do not translate condition wording locally — BMKG has already named it in both languages, and inventing a second vocabulary would drift from theirs.
+
 **Never parse BMKG's `local_datetime` into a `Date` directly.** It is wall-clock at the forecast location with no offset attached, so parsing it reinterprets it in the *viewer's* timezone. `ForecastPoint.time` is the true instant from `utc_datetime`; `offsetMinutes` exists only for rendering wall-clock text. Night-window comparisons work on absolute instants and need no timezone handling.
 
 **BMKG attribution is mandatory** and lives in `SpotPanel.vue` next to the data, not in a footer. Rate limit is 60 req/min per IP; the proxy caches for 30 min because BMKG only publishes twice a day.
@@ -79,6 +83,8 @@ Two mechanisms, on purpose:
 
 Errors throw message keys (`throw new Error('errors.forecastEmpty')`). `translate` returns unknown keys unchanged, so `t(err.message)` is safe on any string.
 
+**`translate` returning unknown keys unchanged is what makes leaks silent, so sweep the rendered page rather than the source.** Four separate leaks survived a source-level review: BMKG condition wording, `ObjectTable`'s empty state, `compassPoint` used where `compassShortKey` was meant, and `groupByLocalDay` called without a locale. None of them looked wrong in the file. All were obvious in the browser in English. Sweep every tab, and reach the states normal clicking misses — the empty object list needs a point with nothing above 20°.
+
 Dates go through `Intl.DateTimeFormat(locale, { timeZone: 'UTC', … })` applied to a `shift()`ed instant. The `timeZone: 'UTC'` is load-bearing — `shift()` already moved the instant so its UTC fields read as local wall clock, and letting Intl apply the viewer's zone would shift it twice.
 
 Default is English, but a browser asking for Indonesian gets Indonesian; an explicit choice wins and persists in `localStorage`. That whole rule is `resolveInitialLocale` in `src/lib/i18n.ts`, pure and tested.
@@ -91,6 +97,16 @@ Default is English, but a browser asking for Indonesian gets Indonesian; an expl
 
 ## Design
 
-The app is a field instrument, not a web page: used outdoors at night by people whose dark adaptation a bright screen destroys. Hence the near-black surface, warm accents, and no blue-white anywhere. "Mode lapangan" drops the whole interface — map included — to red monochrome. Keep new UI inside that constraint. Rationale is in the header comment of `src/styles.css`.
+The app is a field instrument, not a web page: used outdoors at night by people whose dark adaptation a bright screen destroys. Hence the near-black surface and nothing that glares. "Mode lapangan" drops the whole interface — map included — to red monochrome. Keep new UI inside that constraint. Rationale is in the header comment of `src/styles.css`.
+
+**Colour carries three meanings and only three.** `--azure` (with `--azure-dim`, and `--brand` for the literal logo navy) is identity and interaction: active tab, selected row, focus ring, map marker, logo. `--ember` is warning and nothing else: errors, the limiting factor, a provisional score. `--clear` is "good". `--ember` used to mean both accent and warning, which is why recolouring the app was a token split rather than a find-and-replace — a single token that means two things cannot be changed without changing both.
+
+`--brand` is `#193667` exactly as the logo is drawn, and at 1.6:1 against `--panel` it can only ever be a surface. Anything that needs to be *read* uses `--azure`, the same hue lifted to 6.7:1.
+
+**Every colour token must be remapped in the `:root[data-field='true']` block, the blue ones most of all.** Short wavelengths are precisely what field mode exists to remove; one token left unmapped makes the mode decorative instead of functional. Verify by screenshotting field mode and scanning computed styles for a dominant blue channel, not by eye.
+
+**Icons are drawn in `src/lib/icons.ts`, not installed.** Filled glyphs on a 24 grid, `currentColor` throughout — which is what makes field mode recolour them for free, with no second asset and no per-icon CSS. They render at 12–14px beside 11–13px type, and *that* is the size to judge them at: an earlier stroked set turned to mush, and `cloud` vs `overcast` had to be redrawn as one layer vs two because scaling the same shape was indistinguishable there. `LANDMARK_ICONS` / `CATEGORY_ICONS` / `FACTOR_ICONS` are typed as full `Record`s so a new landmark kind or sub-score fails to compile until it has a glyph.
+
+`MoonGlyph.vue` draws the actual phase from `illumination`, so the picture cannot disagree with the number printed beside it. The geometry lives in `src/lib/moonShape.ts` because it got the terminator's curvature backwards once and rendered a full moon as a black disc — a component cannot be unit-tested into admitting that.
 
 `NightBar.vue` is the signature element: dark window, cloud cover, and moon presence on one time axis. It answers *when* to go, which is the decision being made. Its SVG uses a uniform aspect ratio — an earlier `preserveAspectRatio="none"` distorted all text and must not come back.

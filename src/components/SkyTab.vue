@@ -187,7 +187,7 @@ function whenLabel(daysAway: number): string {
 .milkyway {
   padding: 0.875rem;
   background: var(--panel-raised);
-  border-left: 2px solid var(--ember-dim);
+  border-left: 2px solid var(--azure-dim);
 }
 
 .milkyway[data-verdict='baik'] {

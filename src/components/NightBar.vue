@@ -21,6 +21,7 @@ import { computed } from 'vue'
 import type { ForecastPoint, MoonConditions, NightWindow, ObjectVisibility } from '@/types'
 import { formatAtOffset } from '@/lib/time'
 import { useI18n } from '@/composables/useI18n'
+import MoonGlyph from './MoonGlyph.vue'
 
 const { t } = useI18n()
 
@@ -256,6 +257,9 @@ const ariaLabel = computed(() => {
       <li>
         <i class="swatch moon-swatch" aria-hidden="true"></i>{{ t('night.moonUp') }}
         <span class="numeric">{{ moonPercent }}%</span>
+        <!-- How bright that moon is, which the track's opacity encodes but no
+             legend swatch can say. -->
+        <MoonGlyph :illumination="moon.illumination" :phase-key="moon.phaseKey" :size="1.2" />
       </li>
       <li v-if="coreTrack">
         <i class="swatch core-swatch" aria-hidden="true"></i>{{ t('milkyWay.heading') }}
@@ -294,7 +298,7 @@ svg {
 }
 
 .edge {
-  stroke: var(--ember-dim);
+  stroke: var(--azure-dim);
   stroke-width: 1;
   stroke-dasharray: 3 3;
 }
@@ -325,12 +329,12 @@ svg {
 }
 
 .moon-track {
-  stroke: var(--clear);
+  stroke: var(--ember);
   stroke-width: 4;
 }
 
 .core-track {
-  stroke: var(--star);
+  stroke: var(--azure);
   stroke-width: 4;
   opacity: 0.85;
 }
@@ -385,13 +389,13 @@ svg {
 }
 
 .moon-swatch {
-  background: var(--clear);
+  background: var(--ember);
   height: 0.1875rem;
   border-radius: 2px;
 }
 
 .core-swatch {
-  background: var(--star);
+  background: var(--azure);
   height: 0.1875rem;
   border-radius: 2px;
 }

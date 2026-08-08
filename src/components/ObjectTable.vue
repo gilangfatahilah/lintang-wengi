@@ -9,8 +9,10 @@
 import { computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import type { VisibleObject } from '@/types'
-import { groupByCategory, compassPoint } from '@/lib/visibility'
+import { groupByCategory, compassShortKey } from '@/lib/visibility'
 import { formatAtOffset } from '@/lib/time'
+import { CATEGORY_ICONS } from '@/lib/icons'
+import Icon from './Icon.vue'
 
 const { t, pick } = useI18n()
 
@@ -36,12 +38,15 @@ function magnitude(entry: VisibleObject): string {
 <template>
   <div class="objects">
     <section v-for="group in groups" :key="group.category">
-      <h3 class="eyebrow">{{ t(group.labelKey) }}</h3>
+      <h3 class="eyebrow">
+        <Icon :name="CATEGORY_ICONS[group.category]" />
+        {{ t(group.labelKey) }}
+      </h3>
       <ul>
         <li v-for="entry in group.entries" :key="entry.object.id">
           <div class="line">
             <span class="name">{{ pick(entry.object.name) }}</span>
-            <span class="numeric mag" :title="`Magnitudo ${magnitude(entry)}`">
+            <span class="numeric mag" :title="t('sky.magnitudeTitle', { value: magnitude(entry) })">
               {{ magnitude(entry) }}
             </span>
           </div>
@@ -50,16 +55,14 @@ function magnitude(entry: VisibleObject): string {
             <span class="sep">·</span>
             <span>{{ Math.round(entry.visibility.maxAltitude) }}°</span>
             <span class="sep">·</span>
-            <span>{{ compassPoint(entry.visibility.azimuthAtMax) }}</span>
+            <span>{{ t(compassShortKey(entry.visibility.azimuthAtMax)) }}</span>
           </div>
           <p v-if="entry.object.note" class="note">{{ pick(entry.object.note) }}</p>
         </li>
       </ul>
     </section>
 
-    <p v-if="groups.length === 0" class="empty">
-      Tidak ada objek katalog yang naik di atas 20° selama malam gelap di sini.
-    </p>
+    <p v-if="groups.length === 0" class="empty">{{ t('sky.nothingUp') }}</p>
   </div>
 </template>
 
@@ -71,6 +74,9 @@ function magnitude(entry: VisibleObject): string {
 }
 
 h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
   margin: 0 0 0.375rem;
 }
 
@@ -110,7 +116,7 @@ li {
 }
 
 .sep {
-  color: var(--ember-dim);
+  color: var(--azure-dim);
 }
 
 .note {

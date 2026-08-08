@@ -3,9 +3,14 @@
  *
  * This app is used outdoors, at night, by people whose eyes are dark-adapted --
  * roughly 20 minutes of adaptation that a bright screen destroys instantly. So the
- * surface is near-black and every accent is warm; there is no blue-white glare
- * anywhere. "Mode lapangan" takes that to its functional conclusion and drops the
- * interface to red monochrome, the way an observatory torch does.
+ * surface is near-black and nothing here glares. "Mode lapangan" takes that to its
+ * functional conclusion and drops the interface to red monochrome, the way an
+ * observatory torch does.
+ *
+ * Colour carries three meanings and only three. Blue is identity and interaction,
+ * green is "good", orange is "this is what is holding you back". Each token below
+ * says which one it is, because a token that means two things -- as --ember once did,
+ * being both "accent" and "warning" -- cannot be changed without changing both.
  *
  * Type: Space Grotesk carries headings, IBM Plex Mono carries every figure. Almost
  * all content here is numbers -- times, percentages, coordinates -- and monospace
@@ -18,11 +23,30 @@
   --void: #07080b;
   --panel: #0e1117;
   --panel-raised: #151a23;
+
+  /*
+   * Identity and interaction. --brand is the logo navy exactly as drawn; at 1.6:1
+   * against --panel it can only ever be a surface, never text, so the accent is the
+   * same hue lifted to 6.7:1. Keeping both means the brand colour still appears
+   * literally somewhere rather than only as an approximation of itself.
+   */
+  --brand: #193667;
+  --azure: #6c9be0;
+  --azure-dim: #2a4a80;
+
+  /* Warning, and nothing else: errors, the limiting factor, an incomplete score. */
   --ember: #ff5a33;
   --ember-dim: #7d2c1b;
+
   --star: #e8e4da;
   --haze: #8b8f9a;
-  --clear: #7fd4e8;
+
+  /*
+   * "Good": clear sky, a dark night, an object worth pointing at. Teal rather than
+   * the cyan it used to be -- cyan sits 27 degrees from --azure, close enough that
+   * "this is fine" and "this is selected" damped each other out.
+   */
+  --clear: #5fd6a6;
   /* Fill of the dark-window band in the night bar. */
   --night-band: #01030a;
 
@@ -39,11 +63,18 @@
 /*
  * Field mode: red monochrome. Long-wavelength light barely bleaches rhodopsin, so
  * this is the only way to read a screen without giving up dark adaptation.
+ *
+ * Every colour token has to be remapped here, with no exceptions -- the blue ones
+ * most of all, since short wavelengths are exactly what this mode exists to remove.
+ * One token left unmapped and the mode is decorative rather than functional.
  */
 :root[data-field='true'] {
   --star: #ff6a45;
   --haze: #9e3a24;
   --clear: #ff5a33;
+  --brand: #1a0708;
+  --azure: #ff6a45;
+  --azure-dim: #9e3a24;
   --panel: #0a0405;
   --panel-raised: #140708;
   --void: #050203;
@@ -88,7 +119,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--ember);
+  outline: 2px solid var(--azure);
   outline-offset: 2px;
 }
 

@@ -11,7 +11,10 @@ import { useI18n } from '@/composables/useI18n'
 import { visibilityDuring } from '@/lib/visibility'
 import { MILKY_WAY_CORE } from '@/lib/skyCatalog'
 import { formatAtOffset, timezoneLabel } from '@/lib/time'
+import { FACTOR_ICONS } from '@/lib/icons'
 import NightBar from './NightBar.vue'
+import Icon from './Icon.vue'
+import MoonGlyph from './MoonGlyph.vue'
 
 const { t, tx } = useI18n()
 
@@ -52,6 +55,8 @@ const moonTimes = computed(() => {
       <div class="verdict-text">
         <p class="label">{{ tx(ratingText(score.rating)) }}</p>
         <p v-if="limitingFactorText(score)" class="reason">
+          <!-- Names the culprit before the sentence does. -->
+          <Icon :name="FACTOR_ICONS[score.limitingFactor!.key]" />
           {{ tx(limitingFactorText(score)!) }}
         </p>
         <p v-else-if="score.complete" class="reason good">{{ t('score.nothingLimiting') }}</p>
@@ -89,6 +94,13 @@ const moonTimes = computed(() => {
         <dt class="eyebrow">{{ t('moon.heading') }}</dt>
         <dd>
           <span class="numeric strong">
+            <MoonGlyph
+              v-if="moon"
+              :illumination="moon.illumination"
+              :phase-key="moon.phaseKey"
+              :size="1.35"
+              class="moon-glyph"
+            />
             {{
               moon
                 ? `${t('moon.phase.' + moon.phaseKey)} ${Math.round(moon.illumination * 100)}%`
@@ -128,8 +140,8 @@ const moonTimes = computed(() => {
   align-items: center;
   gap: 0.875rem;
   padding: 0.875rem;
-  background: var(--panel-raised);
-  border-left: 2px solid var(--ember);
+  background: var(--brand);
+  border-left: 2px solid var(--azure);
 }
 
 .rating {
@@ -165,6 +177,15 @@ const moonTimes = computed(() => {
   margin: 0.125rem 0 0;
   font-size: 0.8125rem;
   color: var(--haze);
+}
+
+.reason .icon {
+  margin-right: 0.25rem;
+  color: var(--ember);
+}
+
+.moon-glyph {
+  margin-right: 0.375rem;
 }
 
 .reason.good {
