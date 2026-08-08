@@ -16,6 +16,7 @@ import MapView from './components/MapView.vue'
 import PlaceSearch from './components/PlaceSearch.vue'
 import SpotPanel from './components/SpotPanel.vue'
 import PanelResizer from './components/PanelResizer.vue'
+import PanelControls from './components/PanelControls.vue'
 import Icon from './components/Icon.vue'
 import { provideI18n } from '@/composables/useI18n'
 import { usePanelLayout } from '@/composables/usePanelLayout'
@@ -251,9 +252,20 @@ watch(fieldMode, (on) => {
           @minimize="panelMinimize"
           @maximize="panelMaximize"
         />
+        <!-- Carries the same controls as SpotPanel. Without them, maximizing before
+             picking a point hid the map behind a panel with no way to shrink, and
+             the state outlived a reload. -->
         <aside v-else class="empty">
-          <p class="lede">{{ t('app.tagline') }}</p>
-          <p class="sub">{{ t('app.intro') }}</p>
+          <div class="empty-text">
+            <p class="lede">{{ t('app.tagline') }}</p>
+            <p class="sub">{{ t('app.intro') }}</p>
+          </div>
+          <PanelControls
+            :state="panelState"
+            :placement="panelPlacement"
+            @minimize="panelMinimize"
+            @maximize="panelMaximize"
+          />
         </aside>
       </template>
     </main>
@@ -397,7 +409,17 @@ watch(fieldMode, (on) => {
 }
 
 .empty {
-  padding: 1.5rem 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.25rem;
+}
+
+.empty-text {
+  min-width: 0;
+  /* Matches the readout's cap so a maximized empty panel is not one long line. */
+  max-width: 46rem;
 }
 
 /*

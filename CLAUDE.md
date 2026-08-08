@@ -121,6 +121,7 @@ Three things that will bite:
 
 - **`grid-template-columns` must match the number of children actually rendered.** The separator is only rendered in the `normal` state, so the minimized and maximized states declare two tracks, not three. Leaving three left the panel in the middle `auto` track, sized to its content instead of filling the window.
 - **The `@media (max-width: 52rem)` breakpoint exists twice** — in `App.vue` and as `STACKED_QUERY` in `usePanelLayout.ts`. CSS decides the layout, JS decides whether a drag is measured against width or height. They have to agree.
+- **Anything that can occupy the panel column has to carry `PanelControls`.** They are not part of the spot readout; they belong to the container. Living inside `SpotPanel`, which is not rendered before a point is picked, meant maximizing on a fresh session hid the map behind a panel with no way to shrink — and the state outlived a reload, so the app came back trapped. `App.vue` renders them in the empty state too.
 - **MapLibre only watches the window, not its container.** `MapView` runs a `ResizeObserver` calling `map.resize()`. Without it a resized panel leaves a stretched canvas whose clicks return coordinates for somewhere the user did not click.
 
 `SpotPanel`'s content is capped at 46rem and centred. Past that a readout column stops being easier to read and `NightBar`, which keeps a uniform aspect ratio on purpose, renders as a 400px-tall graphic with type to match.
