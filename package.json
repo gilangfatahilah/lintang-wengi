@@ -13,7 +13,7 @@
     "data:wilayah": "node scripts/build_wilayah_index.mjs",
     "data:lp": "python3 scripts/build_lp_grid.py --stub",
     "preview:cf": "pnpm build && wrangler dev",
-    "deploy": "pnpm build && wrangler deploy"
+    "deploy:cf": "pnpm build && wrangler deploy"
   },
   "dependencies": {
     "astronomy-engine": "^2.1.19",

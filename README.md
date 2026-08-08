@@ -22,7 +22,7 @@ pnpm dev            # http://localhost:5173
 | `pnpm test` | Unit test (`src/lib/`). |
 | `pnpm build` | Typecheck + build produksi. |
 | `pnpm preview:cf` | Build lalu sajikan lewat Cloudflare Workers — jalur produksi sesungguhnya, termasuk proxy. |
-| `pnpm deploy` | Build dan deploy ke Cloudflare Workers. |
+| `pnpm deploy:cf` | Build dan deploy ke Cloudflare Workers. |
 | `pnpm data:lp` | Regenerate grid polusi cahaya (mode stub). |
 | `pnpm data:wilayah` | Regenerate indeks kecamatan. Tambahkan `--validate` untuk mengecek kode adm4 ke API BMKG. |
 
@@ -32,8 +32,10 @@ Dev server dan `preview:cf` memakai path `/api/forecast` yang sama, tapi impleme
 
 ```bash
 npx wrangler login
-pnpm deploy
+pnpm deploy:cf
 ```
+
+Namanya `deploy:cf`, bukan `deploy`, karena pnpm punya subcommand `deploy` bawaan yang menaungi script dengan nama itu — `pnpm deploy` gagal dengan `ERR_PNPM_CANNOT_DEPLOY` dan tidak pernah menyentuh script-nya.
 
 Tidak ada environment variable atau secret. BMKG tidak memerlukan API key.
 
