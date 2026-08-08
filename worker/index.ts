@@ -1,13 +1,18 @@
 /**
- * Cloudflare Pages Function: thin proxy for the BMKG forecast API.
+ * Cloudflare Worker: the built app's static assets, plus a thin proxy for the BMKG
+ * forecast API.
  *
  * BMKG does not send usable CORS headers, so the browser cannot call it directly.
  * This is the only server-side code in the project and it stays deliberately thin:
  * validate, fetch, cache, add CORS. No parsing -- that lives in src/lib/bmkg.ts,
  * where it is unit-tested.
  *
- * Deployed at /api/forecast. vite.config.ts mirrors the same path in dev so client
+ * Served at /api/forecast. vite.config.ts mirrors the same path in dev so client
  * code never has to branch on environment.
+ *
+ * Everything else is handed to the ASSETS binding. Static files are matched before
+ * this Worker is woken at all, so serving the app costs no invocation; only a path
+ * that matches no built file arrives here.
  *
  * This file targets the Workers runtime, not the browser, so it is excluded from
  * the app's tsconfig and types the request/response surface locally.
@@ -30,8 +35,11 @@ const ADM4_PATTERN = /^\d{2}\.\d{2}\.\d{2}\.\d{4}$/
  */
 const CACHE_SECONDS = 1800
 
-interface PagesContext {
-  request: Request
+interface Env {
+  ASSETS: { fetch(request: Request): Promise<Response> }
+}
+
+interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void
 }
 
@@ -48,8 +56,7 @@ function json(body: unknown, status: number, extraHeaders: Record<string, string
   })
 }
 
-export async function onRequestGet(context: PagesContext): Promise<Response> {
-  const url = new URL(context.request.url)
+async function forecast(url: URL, ctx: ExecutionContext): Promise<Response> {
   const adm4 = url.searchParams.get('adm4')
 
   if (!adm4 || !ADM4_PATTERN.test(adm4)) {
@@ -98,12 +105,12 @@ export async function onRequestGet(context: PagesContext): Promise<Response> {
     'x-data-source': 'BMKG',
   })
 
-  context.waitUntil(cache.put(cacheKey, res.clone()))
+  ctx.waitUntil(cache.put(cacheKey, res.clone()))
   return res
 }
 
 /** CORS preflight, in case the app is ever served from a different origin. */
-export function onRequestOptions(): Response {
+function preflight(): Response {
   return new Response(null, {
     status: 204,
     headers: {
@@ -112,4 +119,23 @@ export function onRequestOptions(): Response {
       'access-control-max-age': '86400',
     },
   })
+}
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url)
+
+    // Pages routed by filename; a Worker has to say which paths are its own. Only
+    // this one is, and it is matched exactly rather than by prefix so that no other
+    // path can be smuggled into the proxy.
+    if (url.pathname === '/api/forecast') {
+      if (request.method === 'OPTIONS') return preflight()
+      if (request.method !== 'GET') {
+        return json({ error: 'Metode tidak didukung.' }, 405, { allow: 'GET, OPTIONS' })
+      }
+      return forecast(url, ctx)
+    }
+
+    return env.ASSETS.fetch(request)
+  },
 }

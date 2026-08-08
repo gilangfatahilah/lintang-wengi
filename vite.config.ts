@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 
-// Dev-only stand-in for the Cloudflare Pages Function in functions/api/forecast.ts.
+// Dev-only stand-in for the Cloudflare Worker in worker/index.ts.
 // Vite proxies server-side, so BMKG's missing CORS headers are a non-issue here.
 // Keep the path identical to production so client code never branches on env.
 export default defineConfig({

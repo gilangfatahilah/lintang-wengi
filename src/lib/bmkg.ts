@@ -127,7 +127,7 @@ export function groupByLocalDay(
 
 /**
  * Fetches a forecast through our proxy. BMKG sends no usable CORS headers, so the
- * browser can never call it directly -- see functions/api/forecast.ts (production)
+ * browser can never call it directly -- see worker/index.ts (production)
  * and the dev proxy in vite.config.ts, which share this path.
  */
 export async function fetchForecast(adm4: string, signal?: AbortSignal): Promise<Forecast> {

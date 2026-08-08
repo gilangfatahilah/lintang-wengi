@@ -28,7 +28,9 @@ Generated data lives in `public/data/`. The light pollution artifacts are gitign
 
 **All domain logic is pure functions in `src/lib/`, unit-tested with no DOM, no network, no map.** Vue components only render. When adding logic, put it in `src/lib/` with a test rather than inside a component.
 
-The one piece of server-side code is `functions/api/forecast.ts`, a Cloudflare Pages Function proxying BMKG. It validates, fetches, caches, and adds CORS — no parsing. It targets the Workers runtime and is deliberately excluded from the app's tsconfig. `vite.config.ts` mirrors the same `/api/forecast` path in dev so client code never branches on environment.
+The one piece of server-side code is `worker/index.ts`, a Cloudflare Worker that serves the built assets and proxies BMKG at `/api/forecast`. It validates, fetches, caches, and adds CORS — no parsing. It targets the Workers runtime and is deliberately excluded from the app's tsconfig. `vite.config.ts` mirrors the same `/api/forecast` path in dev so client code never branches on environment.
+
+**A Worker has to name its own routes; Pages routed by filename.** `/api/forecast` is matched exactly, not by prefix, and everything else goes to the `ASSETS` binding. Two things in `wrangler.toml` are load-bearing: assets are matched *before* the Worker wakes, so serving the app costs no invocation, and `not_found_handling` must stay at its default — setting `single-page-application` would answer `/api/forecast` with `index.html`, turning the forecast into HTML with a 200 status.
 
 Click flow: everything computable offline (light pollution sample, dark window, moon) resolves synchronously and renders immediately; only the forecast awaits the network, then cloud cover folds into the score.
 

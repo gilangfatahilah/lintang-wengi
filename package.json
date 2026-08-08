@@ -12,8 +12,8 @@
     "typecheck": "vue-tsc --noEmit",
     "data:wilayah": "node scripts/build_wilayah_index.mjs",
     "data:lp": "python3 scripts/build_lp_grid.py --stub",
-    "preview:cf": "pnpm build && wrangler pages dev dist",
-    "deploy": "pnpm build && wrangler pages deploy dist"
+    "preview:cf": "pnpm build && wrangler dev",
+    "deploy": "pnpm build && wrangler deploy"
   },
   "dependencies": {
     "astronomy-engine": "^2.1.19",

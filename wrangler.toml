@@ -1,11 +1,20 @@
-# This is the Pages project name, so it is also the hostname: lintang-wengi.pages.dev.
-# Changing it after the first deploy creates a second project rather than renaming
-# the first, so it has to be right before that deploy, not after.
+# This is the Worker name, so it is also the hostname: lintang-wengi.<account>.workers.dev.
+# Changing it after the first deploy creates a second Worker rather than renaming the
+# first, so it has to be right before that deploy, not after.
 name = "lintang-wengi"
-pages_build_output_dir = "dist"
+main = "worker/index.ts"
 
 # Pinning this keeps the Workers runtime behaviour identical between local
-# `wrangler pages dev` and production. Without it wrangler silently uses today's
+# `wrangler dev` and production. Without it wrangler silently uses today's
 # date, so a deploy months from now could land on different runtime semantics
 # than the one that was tested.
 compatibility_date = "2026-08-05"
+
+# Static assets are matched before the Worker runs, so serving the app costs no
+# invocation. Not-found handling is left at its default on purpose: a request
+# matching no built file falls through to the Worker, which is exactly how
+# /api/forecast reaches it. Setting single-page-application here would answer that
+# path with index.html instead, and the forecast would silently become HTML.
+[assets]
+directory = "./dist"
+binding = "ASSETS"

@@ -21,12 +21,12 @@ pnpm dev            # http://localhost:5173
 | `pnpm dev` | Dev server. `/api/forecast` diteruskan langsung ke BMKG oleh Vite. |
 | `pnpm test` | Unit test (`src/lib/`). |
 | `pnpm build` | Typecheck + build produksi. |
-| `pnpm preview:cf` | Build lalu sajikan lewat Cloudflare Pages Functions — jalur produksi sesungguhnya, termasuk proxy. |
-| `pnpm deploy` | Build dan deploy ke Cloudflare Pages. |
+| `pnpm preview:cf` | Build lalu sajikan lewat Cloudflare Workers — jalur produksi sesungguhnya, termasuk proxy. |
+| `pnpm deploy` | Build dan deploy ke Cloudflare Workers. |
 | `pnpm data:lp` | Regenerate grid polusi cahaya (mode stub). |
 | `pnpm data:wilayah` | Regenerate indeks kecamatan. Tambahkan `--validate` untuk mengecek kode adm4 ke API BMKG. |
 
-Dev server dan `preview:cf` memakai path `/api/forecast` yang sama, tapi implementasinya beda: Vite mem-proxy langsung, sedangkan produksi memakai [`functions/api/forecast.ts`](functions/api/forecast.ts). **Uji perubahan pada proxy lewat `pnpm preview:cf`** — perubahan di situ tidak akan terlihat di `pnpm dev`.
+Dev server dan `preview:cf` memakai path `/api/forecast` yang sama, tapi implementasinya beda: Vite mem-proxy langsung, sedangkan produksi memakai [`worker/index.ts`](worker/index.ts). **Uji perubahan pada proxy lewat `pnpm preview:cf`** — perubahan di situ tidak akan terlihat di `pnpm dev`.
 
 ## Deploy
 
@@ -36,6 +36,8 @@ pnpm deploy
 ```
 
 Tidak ada environment variable atau secret. BMKG tidak memerlukan API key.
+
+Deploy-nya sebagai Cloudflare Worker dengan static assets, bukan Cloudflare Pages. Ini bukan soal teknis: sebagian ISP Indonesia memblokir `pages.dev` di level DNS, sehingga aplikasinya sehat tapi tidak bisa dibuka dari jaringan rumahan. Blokir semacam itu mencocokkan nama domain, dan daftarnya berbeda antar ISP — jadi `workers.dev` pun bukan jaminan untuk semua pengguna. Custom domain adalah satu-satunya perbaikan yang tahan lama.
 
 ## Catatan data
 
