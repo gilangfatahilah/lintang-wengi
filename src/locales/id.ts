@@ -20,6 +20,14 @@ export const id: Messages = {
       'Sebagian data gagal dimuat. Jalankan `pnpm data:lp` dan `pnpm data:wilayah`, lalu muat ulang.',
   },
 
+  moonTonight: {
+    heading: 'Bulan malam ini',
+    dark: 'Nyaris bulan baru. Langit tidak akan lebih gelap dari ini sebulan penuh.',
+    thin: 'Bulan tipis. Objek samar masih terjangkau.',
+    half: 'Separuh bercahaya. Milky Way meredup selama bulan berada di atas horizon.',
+    bright: 'Bulan terang. Nyaris tidak ada yang samar bertahan.',
+  },
+
   map: {
     lightPollution: 'Polusi cahaya',
     shown: 'tampil',

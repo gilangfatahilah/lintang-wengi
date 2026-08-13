@@ -17,6 +17,7 @@ import PlaceSearch from './components/PlaceSearch.vue'
 import SpotPanel from './components/SpotPanel.vue'
 import PanelResizer from './components/PanelResizer.vue'
 import PanelControls from './components/PanelControls.vue'
+import MoonTonight from './components/MoonTonight.vue'
 import Icon from './components/Icon.vue'
 import { provideI18n } from '@/composables/useI18n'
 import { usePanelLayout } from '@/composables/usePanelLayout'
@@ -259,6 +260,7 @@ watch(fieldMode, (on) => {
           <div class="empty-text">
             <p class="lede">{{ t('app.tagline') }}</p>
             <p class="sub">{{ t('app.intro') }}</p>
+            <MoonTonight />
           </div>
           <PanelControls
             :state="panelState"

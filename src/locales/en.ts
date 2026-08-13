@@ -14,6 +14,14 @@ export const en = {
     dataError: 'Some data failed to load. Run `pnpm data:lp` and `pnpm data:wilayah`, then reload.',
   },
 
+  moonTonight: {
+    heading: 'Moon tonight',
+    dark: 'Near new. The sky will not get darker than this all month.',
+    thin: 'A thin moon. Faint targets stay within reach.',
+    half: 'Half lit. The Milky Way dims wherever this moon is up.',
+    bright: 'A bright moon. Little that is faint survives it.',
+  },
+
   map: {
     lightPollution: 'Light pollution',
     shown: 'shown',

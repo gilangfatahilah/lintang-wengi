@@ -113,6 +113,8 @@ The app is a field instrument, not a web page: used outdoors at night by people 
 
 `MoonGlyph.vue` draws the actual phase from `illumination`, so the picture cannot disagree with the number printed beside it. The geometry lives in `src/lib/moonShape.ts` because it got the terminator's curvature backwards once and rendered a full moon as a black disc — a component cannot be unit-tested into admitting that.
 
+**The empty state answers what does not need a location.** Phase and illuminated fraction are geocentric — the same number for every observer on Earth at a given instant — so `MoonTonight.vue` can state them before a point is picked. Moonrise, moonset and time-above-horizon are not, vary by tens of minutes across the archipelago, and belong to the readout that appears after a click. `src/lib/moonTonight.ts` exposes only the two that travel; completing the set is the mistake it exists to prevent. It is evaluated at the midnight of the night in question, pivoting on local noon, because illumination moves up to seven points a day and "now" at breakfast is not tonight.
+
 `NightBar.vue` is the signature element: dark window, cloud cover, and moon presence on one time axis. It answers *when* to go, which is the decision being made. Its SVG uses a uniform aspect ratio — an earlier `preserveAspectRatio="none"` distorted all text and must not come back.
 
 ## Panel layout
