@@ -235,14 +235,18 @@ export const ICONS: Record<IconName, string> = {
    * toward the right edge, not away from it.
    *
    * Drawn for the `beside` case and rotated a quarter turn when the panel is below.
+   * That rotation is why the arrows lost their shafts: a shaft running into a bar is
+   * the download glyph, and a quarter turn put it exactly there -- one control read
+   * as "download", the one beside it as "upload". A chevron against the same bar
+   * says the same thing about the panel and collides with nothing.
    */
   collapse:
     '<rect x="17.4" y="3" width="3.6" height="18" rx="0.6"/>' +
-    `<g ${S} stroke-width="1.9"><path d="M3.4 12h10M9 7.2 13.8 12 9 16.8"/></g>`,
+    `<g ${S} stroke-width="2.2"><path d="M6.2 5.6 12.6 12l-6.4 6.4"/></g>`,
 
   expand:
     '<rect x="17.4" y="3" width="3.6" height="18" rx="0.6"/>' +
-    `<g ${S} stroke-width="1.9"><path d="M13.4 12H3.4M8 7.2 3.2 12l4.8 4.8"/></g>`,
+    `<g ${S} stroke-width="2.2"><path d="M12.6 5.6 6.2 12l6.4 6.4"/></g>`,
 
   restore:
     '<rect x="3" y="3" width="3.6" height="18" rx="0.6"/>' +

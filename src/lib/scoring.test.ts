@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { computeScore, cloudCoverForNight } from './scoring'
+import { computeScore, cloudCoverForNight, limitingFactorText } from './scoring'
+import { translateText, type MessageTree } from './i18n'
+import { en } from '@/locales/en'
+import { id } from '@/locales/id'
 import type { ForecastPoint, MoonConditions } from '@/types'
 
 const NEW_MOON: MoonConditions = {
@@ -120,6 +123,29 @@ describe('computeScore', () => {
     const rural = computeScore({ bortle: 2, cloudCover: 5, moon: NEW_MOON })
     expect(suburban.rating).toBeLessThan(rural.rating)
     expect(suburban.limitingFactor?.key).toBe('darkness')
+  })
+})
+
+describe('limitingFactorText, once rendered', () => {
+  // The bug this locks was invisible in the source: the sentence names the factor
+  // and the detail named it again, so the panel read "Held back by cloud cover --
+  // Cloud cover 39%". Only the rendered string shows it, which is why this asserts
+  // the whole sentence rather than the params.
+  const render = (dict: MessageTree, locale: 'en' | 'id', cloudCover: number) => {
+    const score = computeScore({ bortle: 2, cloudCover, moon: NEW_MOON })
+    return translateText(dict, limitingFactorText(score)!, locale)
+  }
+
+  it('names the factor once', () => {
+    expect(render(en as MessageTree, 'en', 39)).toBe('Held back by cloud cover — 39%')
+    expect(render(id as MessageTree, 'id', 39)).toBe('Tertahan tutupan awan — 39%')
+  })
+
+  it('keeps the detail for factors whose value carries its own unit', () => {
+    const score = computeScore({ bortle: 7, cloudCover: 0, moon: NEW_MOON })
+    expect(translateText(en as MessageTree, limitingFactorText(score)!)).toBe(
+      'Held back by light pollution — Bortle 7',
+    )
   })
 })
 

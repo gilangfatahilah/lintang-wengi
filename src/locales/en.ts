@@ -92,7 +92,9 @@ export const en = {
     },
     factor: {
       darkness: 'Bortle {bortle}',
-      clouds: 'Cloud cover {percent}%',
+      // Bare, because the only place this renders already names the factor:
+      // "Held back by cloud cover — Cloud cover 39%" said it twice.
+      clouds: '{percent}%',
       moon: '{phase} ({percent}%)',
       moonDown: '{phase} ({percent}%), below the horizon',
     },

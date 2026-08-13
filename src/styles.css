@@ -123,6 +123,30 @@ button {
   outline-offset: 2px;
 }
 
+/*
+ * The map's own controls get the same ring as everything else.
+ *
+ * MapLibre ships a 2px #0096ff halo on zoom and attribution, which is a blue that is
+ * not in this palette and a second focus idiom sitting a few pixels from the app's
+ * own. It is not a field-mode leak -- the map's filter covers those controls, so the
+ * halo renders amber like the rest -- but two focus languages in one product is one
+ * too many. It also clears MapLibre's `outline: none`, which is what left the ring
+ * to the box-shadow in the first place.
+ */
+/* Their selectors, matched exactly: MapLibre states the halo twice, and the second
+   rule carries an extra pseudo-class, so anything shorter loses to it. */
+.maplibregl-ctrl-attrib-button:focus,
+.maplibregl-ctrl-group button:focus,
+.maplibregl-ctrl-group button:focus:focus-visible {
+  box-shadow: none;
+}
+
+.maplibregl-ctrl-attrib-button:focus-visible,
+.maplibregl-ctrl-group button:focus-visible {
+  outline: 2px solid var(--azure);
+  outline-offset: 2px;
+}
+
 /* Small caps eyebrow used to label every section of the readout. */
 .eyebrow {
   font-family: var(--font-mono);

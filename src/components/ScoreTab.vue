@@ -37,10 +37,20 @@ const core = computed(() =>
   props.window ? visibilityDuring(MILKY_WAY_CORE, props.point, props.window) : null,
 )
 
+/**
+ * "rises 06:41 · sets 13:58 WIB", with either half dropped when it does not happen.
+ *
+ * A null rise or set is an event that falls outside the night, not a value the app
+ * failed to find -- a moon already up at dusk and still up at dawn has neither. The
+ * em dash that stood in for it read as missing data, and "sets — WIB" read as a bug.
+ */
 const moonTimes = computed(() => {
-  if (!props.moon) return null
-  const fmt = (d: Date | null) => (d ? formatAtOffset(d, props.offsetMinutes) : '—')
-  return { rise: fmt(props.moon.rise), set: fmt(props.moon.set) }
+  const moon = props.moon
+  if (!moon) return null
+  const parts: string[] = []
+  if (moon.rise) parts.push(t('moon.rise', { time: formatAtOffset(moon.rise, props.offsetMinutes) }))
+  if (moon.set) parts.push(t('moon.set', { time: formatAtOffset(moon.set, props.offsetMinutes) }))
+  return parts.length ? `${parts.join(' · ')} ${timezoneLabel(props.offsetMinutes)}` : null
 })
 </script>
 
@@ -107,11 +117,7 @@ const moonTimes = computed(() => {
                 : '—'
             }}
           </span>
-          <span v-if="moonTimes" class="detail numeric">
-            {{ t('moon.rise', { time: moonTimes.rise }) }} ·
-            {{ t('moon.set', { time: moonTimes.set }) }}
-            {{ timezoneLabel(offsetMinutes) }}
-          </span>
+          <span v-if="moonTimes" class="detail numeric">{{ moonTimes }}</span>
         </dd>
       </div>
 

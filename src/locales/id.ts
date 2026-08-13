@@ -98,7 +98,7 @@ export const id: Messages = {
     },
     factor: {
       darkness: 'Bortle {bortle}',
-      clouds: 'Tutupan awan {percent}%',
+      clouds: '{percent}%',
       moon: '{phase} ({percent}%)',
       moonDown: '{phase} ({percent}%), di bawah horizon',
     },
