@@ -49,6 +49,16 @@ export interface ForecastPoint {
    * varies, the code does not.
    */
   weatherCode: number
+  /**
+   * Whether this hour falls after dark, taken from BMKG's own icon slug rather than
+   * computed here: they ship `cerah-am.svg` for daylight hours and `cerah-pm.svg`
+   * after sunset, so the source has already made the call for its own coordinates.
+   *
+   * Only the glyph depends on it. The wording stays exactly as BMKG wrote it, which
+   * is why a clear night still reads "Sunny" beside a crescent -- their vocabulary,
+   * our picture.
+   */
+  isNight: boolean
 }
 
 export interface Forecast {

@@ -23,6 +23,9 @@ export type IconName =
   // Weather, keyed from BMKG's numeric code -- see weather.ts
   | 'sun'
   | 'sun-cloud'
+  // Partly cloudy after dark. Clear nights reuse `moon` -- a crescent is a picture
+  // of the moon in both places, so a second near-identical glyph would earn nothing.
+  | 'moon-cloud'
   | 'cloud'
   | 'overcast'
   | 'haze'
@@ -92,6 +95,14 @@ export const ICONS: Record<IconName, string> = {
     `<g ${S} stroke-width="1.7"><path d="M8 0.9v2M1.9 7h2M3.7 2.7l1.4 1.4M3.7 11.3l1.4-1.4` +
     'M12.3 2.7l-1.4 1.4"/></g>' +
     cloud(13, 14),
+
+  /*
+   * The same composition as sun-cloud, so the pair reads as one condition seen by
+   * day and by night. The crescent is the `moon` path scaled to 0.4375 and moved to
+   * where that glyph puts its sun, which is what keeps the two the same weight at
+   * the 13px they render at.
+   */
+  'moon-cloud': '<path d="M11.63 8.23A4.03 4.03 0 0 1 6.78 3.37A4.2 4.2 0 1 0 11.63 8.23z"/>' + cloud(13, 14),
 
   cloud: cloud(12, 13),
 

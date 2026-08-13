@@ -53,15 +53,34 @@ const BY_CODE: Readonly<Record<number, IconName>> = {
 export const OBSERVED_WEATHER_CODES = [0, 1, 2, 3, 10, 17, 45, 61] as const
 
 /**
+ * Glyphs that draw the sun, and what to draw after dark instead.
+ *
+ * Only the two clear-ish conditions need this. Cloud, rain and fog look the same at
+ * any hour, and a night variant of each would be five more glyphs distinguishable
+ * only by a detail that disappears at 13px.
+ */
+const AFTER_DARK: Readonly<Partial<Record<IconName, IconName>>> = {
+  sun: 'moon',
+  'sun-cloud': 'moon-cloud',
+}
+
+/**
  * The glyph for a BMKG condition code.
+ *
+ * `isNight` swaps the sun out. BMKG's wording is left exactly as they wrote it --
+ * a clear night arrives as "Cerah"/"Sunny" and stays that way, because inventing a
+ * second vocabulary for their conditions is the one thing this app must not do.
+ * The glyph is ours, though, and a midday sun over 23:00 in an app about darkness
+ * was the single place the picture contradicted the subject.
  *
  * Unknown codes fall back to `cloud` rather than to a question mark or to nothing.
  * The table above is the second time this API has disagreed with its own
  * documentation, so a plausible neutral glyph is the right failure: the wording
  * beside it comes from the response, and the row stays truthful either way.
  */
-export function weatherIcon(code: number): IconName {
-  return BY_CODE[code] ?? 'cloud'
+export function weatherIcon(code: number, isNight = false): IconName {
+  const byDay = BY_CODE[code] ?? 'cloud'
+  return isNight ? (AFTER_DARK[byDay] ?? byDay) : byDay
 }
 
 /** Exposed so the test can walk the whole table. */

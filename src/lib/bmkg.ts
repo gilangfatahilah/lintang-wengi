@@ -28,6 +28,8 @@ export interface BmkgResponse {
         weather: number
         weather_desc: string
         weather_desc_en: string
+        /** BMKG's own icon URL, whose slug carries the day/night variant. */
+        image?: string
       }>
     >
   }>
@@ -50,6 +52,22 @@ function offsetMinutesOf(localDatetime: string, utcDatetime: string): number {
   return Math.round((local - utc) / 60000)
 }
 
+/**
+ * Whether a point falls after dark, per BMKG's icon slug.
+ *
+ * They publish two variants of each condition -- `cerah-am.svg` and `cerah-pm.svg`
+ * -- and the split is daylight versus night, not morning versus afternoon: 17:00
+ * local arrives as `-am` and 20:00 as `-pm`. Using their flag rather than computing
+ * a sun altitude here keeps one source deciding what "night" means for a given
+ * forecast point, the same way the wording does.
+ *
+ * Missing or unrecognised slugs read as day, which is the icon set this app drew
+ * first and the safer thing to show for an hour we cannot place.
+ */
+function isNightPoint(image: string | undefined): boolean {
+  return /-pm\.svg(\?|$)/i.test(image ?? '')
+}
+
 export function parseForecast(raw: BmkgResponse): Forecast {
   const entry = raw.data?.[0]
   if (!entry?.cuaca?.length) {
@@ -66,6 +84,7 @@ export function parseForecast(raw: BmkgResponse): Forecast {
     // the condition column stayed Indonesian while the rest of the UI was English.
     description: { en: p.weather_desc_en ?? p.weather_desc, id: p.weather_desc },
     weatherCode: p.weather,
+    isNight: isNightPoint(p.image),
   }))
 
   points.sort((a, b) => a.time.getTime() - b.time.getTime())

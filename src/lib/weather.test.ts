@@ -29,6 +29,31 @@ describe('weatherIcon', () => {
     expect(weatherIcon(95)).toBe(weatherIcon(97))
   })
 
+  it('takes the sun out of the night rows', () => {
+    // The condition wording stays BMKG's -- 0 is "Cerah"/"Sunny" at every hour --
+    // but a midday sun printed against 23:00 is the picture disagreeing with the
+    // subject of the whole app.
+    expect(weatherIcon(0, true)).toBe('moon')
+    expect(weatherIcon(1, true)).toBe('moon')
+    expect(weatherIcon(2, true)).toBe('moon-cloud')
+  })
+
+  it('leaves conditions that look the same after dark alone', () => {
+    for (const code of [3, 4, 10, 45, 61, 63, 95]) {
+      expect(weatherIcon(code, true), `code ${code}`).toBe(weatherIcon(code, false))
+    }
+  })
+
+  it('draws day by default, so an unflagged point cannot silently go dark', () => {
+    expect(weatherIcon(0)).toBe(weatherIcon(0, false))
+  })
+
+  it('gives every code a glyph that exists at night too', () => {
+    for (const code of KNOWN_WEATHER_CODES) {
+      expect(ICONS[weatherIcon(code, true)], `code ${code} at night`).toBeTruthy()
+    }
+  })
+
   /*
    * These eight came from 984 live forecast points, cross-checked against the icon
    * slug BMKG ships in each one. Where they contradict the published code table,

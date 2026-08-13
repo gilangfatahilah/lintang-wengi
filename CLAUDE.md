@@ -44,6 +44,8 @@ Click flow: everything computable offline (light pollution sample, dark window, 
 
 **The response carries `weather_desc_en` alongside `weather_desc`.** `ForecastPoint.description` is therefore `Localized`, not a string. Do not translate condition wording locally — BMKG has already named it in both languages, and inventing a second vocabulary would drift from theirs.
 
+**The wording is theirs; the glyph is ours.** A clear night arrives as "Cerah"/"Sunny" at 23:00 and stays that way — but printing a midday sun beside it was the one place the picture contradicted the subject. `ForecastPoint.isNight` comes from BMKG's own icon slug (`cerah-am.svg` by day, `cerah-pm.svg` after dark; 17:00 local is `-am` and 20:00 is `-pm`, so the split is daylight, not morning), and `weatherIcon(code, isNight)` swaps only the two glyphs that draw a sun. A missing slug reads as day. Rain and fog look the same at any hour and get no night variant — five more glyphs separated by a detail that vanishes at 13px is exactly the mistake `cloud` vs `overcast` already taught.
+
 **Never parse BMKG's `local_datetime` into a `Date` directly.** It is wall-clock at the forecast location with no offset attached, so parsing it reinterprets it in the *viewer's* timezone. `ForecastPoint.time` is the true instant from `utc_datetime`; `offsetMinutes` exists only for rendering wall-clock text. Night-window comparisons work on absolute instants and need no timezone handling.
 
 **BMKG attribution is mandatory** and lives in `SpotPanel.vue` next to the data, not in a footer. Rate limit is 60 req/min per IP; the proxy caches for 30 min because BMKG only publishes twice a day.

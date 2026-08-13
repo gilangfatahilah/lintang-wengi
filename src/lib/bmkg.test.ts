@@ -26,6 +26,39 @@ describe('parseForecast', () => {
     expect(forecast.points[0]!.cloudCover).toBe(raw.data[0]!.cuaca[0]![0]!.tcc)
   })
 
+  describe('isNight, from BMKG\'s own icon slug', () => {
+    // The captured payload is the evidence for what -am and -pm mean: 14:00 and
+    // 17:00 local arrive as -am, 20:00 and 23:00 as -pm. So the split is daylight
+    // versus dark, not morning versus afternoon, and it is BMKG's call, not ours.
+    /** Is the parsed point for this local wall-clock hour marked as after dark? */
+    const nightAt = (localHour: string): boolean => {
+      const source = raw.data[0]!.cuaca.flat().find((r) => r.local_datetime.endsWith(localHour))
+      expect(source, `fixture has no point at ${localHour}`).toBeDefined()
+      const instant = Date.parse(`${source!.utc_datetime.replace(' ', 'T')}Z`)
+      const point = forecast.points.find((p) => p.time.getTime() === instant)
+      expect(point, `no parsed point for ${localHour}`).toBeDefined()
+      return point!.isNight
+    }
+
+    it('marks the hours after sunset', () => {
+      expect(nightAt('20:00:00')).toBe(true)
+      expect(nightAt('23:00:00')).toBe(true)
+      expect(nightAt('05:00:00')).toBe(true)
+    })
+
+    it('leaves daylight hours alone, including late afternoon', () => {
+      expect(nightAt('14:00:00')).toBe(false)
+      expect(nightAt('17:00:00')).toBe(false)
+      expect(nightAt('08:00:00')).toBe(false)
+    })
+
+    it('reads a missing slug as day rather than guessing', () => {
+      const stripped = JSON.parse(JSON.stringify(raw)) as BmkgResponse
+      for (const day of stripped.data[0]!.cuaca) for (const p of day) delete p.image
+      expect(parseForecast(stripped).points.every((p) => !p.isNight)).toBe(true)
+    })
+  })
+
   it('treats utc_datetime as the authoritative instant', () => {
     const first = raw.data[0]!.cuaca[0]![0]!
     expect(forecast.points[0]!.time.toISOString()).toBe(
@@ -70,6 +103,7 @@ describe('formatLocalTime', () => {
       humidity: 0,
       description: { en: '', id: '' },
       weatherCode: 0,
+      isNight: false,
     }
     expect(formatLocalTime(point)).toBe('14:00')
   })
@@ -84,6 +118,7 @@ describe('formatLocalTime', () => {
       humidity: 0,
       description: { en: '', id: '' },
       weatherCode: 0,
+      isNight: false,
     }
     expect(formatLocalTime(point)).toBe('02:00')
   })
@@ -126,6 +161,7 @@ describe('groupByLocalDay', () => {
       humidity: 0,
       description: { en: '', id: '' },
       weatherCode: 0,
+      isNight: false,
     })
     const grouped = groupByLocalDay([point('2026-08-05T17:00:00Z'), point('2026-08-05T20:00:00Z')])
 
@@ -144,6 +180,7 @@ describe('groupByLocalDay', () => {
         humidity: 0,
         description: { en: '', id: '' },
         weatherCode: 0,
+        isNight: false,
       },
     ])
     // Each language keeps its own conventional order -- month-first in English,

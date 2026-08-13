@@ -82,7 +82,7 @@ const days = computed(() =>
               <td class="numeric">{{ Math.round(p.temp) }}°</td>
               <td class="numeric">{{ Math.round(p.humidity) }}%</td>
               <td class="desc">
-                <Icon :name="weatherIcon(p.weatherCode)" class="wx" />
+                <Icon :name="weatherIcon(p.weatherCode, p.isNight)" class="wx" />
                 {{ pick(p.description) }}
               </td>
             </tr>
