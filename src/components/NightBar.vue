@@ -37,14 +37,19 @@ const props = defineProps<{
 
 // Geometry in viewBox units. The aspect ratio is preserved on render, so these are
 // real proportions rather than something the browser will stretch.
+//
+// Nothing here is text. A viewBox unit is not a pixel -- it is a fraction of the
+// rendered width -- so type set inside the SVG grows with the container, and the
+// axis labels reached 31px against 16px body text once the panel filled the window.
+// The labels are HTML positioned over the same coordinate space instead, which is
+// what keeps them at instrument size no matter how wide the bezel gets.
 const W = 340
-const H = 118
+const H = 92
 const PAD_X = 6
 const CORE_Y = 10
 const MOON_Y = 20
 const PLOT_TOP = 32
 const PLOT_BOTTOM = 86
-const TICK_Y = 102
 
 /** Pad the axis an hour either side so dusk and dawn read as edges, not cliffs. */
 const PAD_MS = 3600_000
@@ -164,93 +169,96 @@ const ariaLabel = computed(() => {
       <span class="numeric range">{{ darkLabel }}</span>
     </figcaption>
 
-    <svg
-      :viewBox="`0 0 ${W} ${H}`"
-      role="img"
-      :aria-label="ariaLabel"
-    >
-      <defs>
-        <clipPath id="dark-clip">
-          <rect
-            :x="darkStart"
-            :width="Math.max(darkEnd - darkStart, 0)"
-            :y="PLOT_TOP - 8"
-            :height="PLOT_BOTTOM - PLOT_TOP + 8"
-          />
-        </clipPath>
-      </defs>
-
-      <!-- The dark window: everything outside it is twilight or daylight. -->
-      <rect
-        :x="darkStart"
-        :width="Math.max(darkEnd - darkStart, 0)"
-        :y="PLOT_TOP - 8"
-        :height="PLOT_BOTTOM - PLOT_TOP + 8"
-        class="dark-band"
-      />
-      <line :x1="darkStart" :x2="darkStart" :y1="PLOT_TOP - 10" :y2="PLOT_BOTTOM" class="edge" />
-      <line :x1="darkEnd" :x2="darkEnd" :y1="PLOT_TOP - 10" :y2="PLOT_BOTTOM" class="edge" />
-
-      <!-- Galactic core: the window you actually came for -->
-      <line
-        v-if="coreTrack"
-        :x1="coreTrack.x"
-        :x2="coreTrack.x + coreTrack.width"
-        :y1="CORE_Y"
-        :y2="CORE_Y"
-        class="core-track"
-        stroke-linecap="round"
-      />
-
-      <!-- Moon presence across the dark window -->
-      <line
-        v-if="moonTrack"
-        :x1="moonTrack.x"
-        :x2="moonTrack.x + moonTrack.width"
-        :y1="MOON_Y"
-        :y2="MOON_Y"
-        class="moon-track"
-        :style="{ opacity: 0.3 + 0.7 * moon.illumination }"
-        stroke-linecap="round"
-      />
-
-      <!-- Cloud cover: dim overall, saturated where it actually matters -->
-      <template v-if="areaPath">
-        <path :d="areaPath" class="cloud-area" />
-        <path :d="areaPath" class="cloud-area bright" clip-path="url(#dark-clip)" />
-        <polyline
-          :points="samples.map((p) => `${p.x},${p.y}`).join(' ')"
-          class="cloud-line"
-          fill="none"
-        />
-        <circle v-for="p in samples" :key="p.key" :cx="p.x" :cy="p.y" r="2" class="sample" />
-      </template>
-      <text v-else :x="W / 2" :y="(PLOT_TOP + PLOT_BOTTOM) / 2" class="nodata" text-anchor="middle">
-        {{ t('night.noForecast') }}
-      </text>
-
-      <line :x1="PAD_X" :x2="W - PAD_X" :y1="PLOT_BOTTOM" :y2="PLOT_BOTTOM" class="axis" />
-
-      <line
-        v-if="nowX !== null"
-        :x1="nowX"
-        :x2="nowX"
-        :y1="CORE_Y - 4"
-        :y2="PLOT_BOTTOM + 4"
-        class="now"
-      />
-
-      <text
-        v-for="t in ticks"
-        :key="t.label"
-        :x="t.x"
-        :y="TICK_Y"
-        class="tick"
-        text-anchor="middle"
+    <div class="plot">
+      <svg
+        :viewBox="`0 0 ${W} ${H}`"
+        role="img"
+        :aria-label="ariaLabel"
       >
-        {{ t.label }}
-      </text>
-    </svg>
+        <defs>
+          <clipPath id="dark-clip">
+            <rect
+              :x="darkStart"
+              :width="Math.max(darkEnd - darkStart, 0)"
+              :y="PLOT_TOP - 8"
+              :height="PLOT_BOTTOM - PLOT_TOP + 8"
+            />
+          </clipPath>
+        </defs>
+
+        <!-- The dark window: everything outside it is twilight or daylight. -->
+        <rect
+          :x="darkStart"
+          :width="Math.max(darkEnd - darkStart, 0)"
+          :y="PLOT_TOP - 8"
+          :height="PLOT_BOTTOM - PLOT_TOP + 8"
+          class="dark-band"
+        />
+        <line :x1="darkStart" :x2="darkStart" :y1="PLOT_TOP - 10" :y2="PLOT_BOTTOM" class="edge" />
+        <line :x1="darkEnd" :x2="darkEnd" :y1="PLOT_TOP - 10" :y2="PLOT_BOTTOM" class="edge" />
+
+        <!-- Galactic core: the window you actually came for -->
+        <line
+          v-if="coreTrack"
+          :x1="coreTrack.x"
+          :x2="coreTrack.x + coreTrack.width"
+          :y1="CORE_Y"
+          :y2="CORE_Y"
+          class="core-track"
+          stroke-linecap="round"
+        />
+
+        <!-- Moon presence across the dark window -->
+        <line
+          v-if="moonTrack"
+          :x1="moonTrack.x"
+          :x2="moonTrack.x + moonTrack.width"
+          :y1="MOON_Y"
+          :y2="MOON_Y"
+          class="moon-track"
+          :style="{ opacity: 0.3 + 0.7 * moon.illumination }"
+          stroke-linecap="round"
+        />
+
+        <!-- Cloud cover: dim overall, saturated where it actually matters -->
+        <template v-if="areaPath">
+          <path :d="areaPath" class="cloud-area" />
+          <path :d="areaPath" class="cloud-area bright" clip-path="url(#dark-clip)" />
+          <polyline
+            :points="samples.map((p) => `${p.x},${p.y}`).join(' ')"
+            class="cloud-line"
+            fill="none"
+          />
+          <circle v-for="p in samples" :key="p.key" :cx="p.x" :cy="p.y" r="2" class="sample" />
+        </template>
+
+        <line :x1="PAD_X" :x2="W - PAD_X" :y1="PLOT_BOTTOM" :y2="PLOT_BOTTOM" class="axis" />
+
+        <line
+          v-if="nowX !== null"
+          :x1="nowX"
+          :x2="nowX"
+          :y1="CORE_Y - 4"
+          :y2="PLOT_BOTTOM + 4"
+          class="now"
+        />
+      </svg>
+
+      <p v-if="!areaPath" class="nodata">{{ t('night.noForecast') }}</p>
+    </div>
+
+    <!-- The axis, in HTML. Percentages of the same viewBox width the marks are drawn
+         in, so a label stays over its tick at every panel size. Hidden from the
+         reader because the svg's aria-label already states the window. -->
+    <div class="ticks" aria-hidden="true">
+      <span
+        v-for="tick in ticks"
+        :key="tick.label"
+        class="numeric"
+        :style="{ left: `${(tick.x / W) * 100}%` }"
+        >{{ tick.label }}</span
+      >
+    </div>
 
     <ul class="legend">
       <li><i class="swatch cloud-swatch" aria-hidden="true"></i>{{ t('night.cloudCover') }}</li>
@@ -287,10 +295,29 @@ const ariaLabel = computed(() => {
   color: var(--star);
 }
 
+.plot {
+  position: relative;
+}
+
 svg {
   display: block;
   width: 100%;
   height: auto;
+}
+
+.ticks {
+  position: relative;
+  height: 1rem;
+  margin-top: 0.125rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--haze);
+}
+
+.ticks span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .dark-band {
@@ -344,18 +371,15 @@ svg {
   stroke-width: 1.5;
 }
 
-.tick,
 .nodata {
-  fill: var(--haze);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--haze);
   font-family: var(--font-mono);
-}
-
-.tick {
-  font-size: 11px;
-}
-
-.nodata {
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-style: italic;
 }
 
