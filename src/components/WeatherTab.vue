@@ -50,41 +50,45 @@ const days = computed(() =>
         <span class="numeric">({{ timezoneLabel(offsetMinutes) }})</span>.
       </p>
 
-      <section v-for="day in days" :key="day.key" class="day">
-        <h3 class="eyebrow day-label">{{ day.label }}</h3>
-        <div class="scroller">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">{{ t('weather.time') }}</th>
-                <th scope="col">{{ t('weather.cloud') }}</th>
-                <th scope="col">{{ t('weather.temp') }}</th>
-                <th scope="col">{{ t('weather.humidity') }}</th>
-                <th scope="col">{{ t('weather.condition') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="p in day.points"
-                :key="p.time.toISOString()"
-                :class="{ dark: inDarkWindow(p.time) }"
-              >
-                <td class="numeric">
-                  <span v-if="inDarkWindow(p.time)" class="marker" :aria-label="t('weather.darkRowMarker')">●</span>
-                  {{ formatAtOffset(p.time, p.offsetMinutes) }}
-                </td>
-                <td class="numeric cover">{{ Math.round(p.cloudCover) }}%</td>
-                <td class="numeric">{{ Math.round(p.temp) }}°</td>
-                <td class="numeric">{{ Math.round(p.humidity) }}%</td>
-                <td class="desc">
-                  <Icon :name="weatherIcon(p.weatherCode)" class="wx" />
-                  {{ pick(p.description) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <!-- One table, not one per day. Every day shares a single column layout, which
+           is the only way a column reads straight down the page; separate tables
+           sized themselves to their own widest cell and drifted apart by up to 15px.
+           The days are tbody groups, so the header is stated once and sticks. -->
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">{{ t('weather.time') }}</th>
+              <th scope="col">{{ t('weather.cloud') }}</th>
+              <th scope="col">{{ t('weather.temp') }}</th>
+              <th scope="col">{{ t('weather.humidity') }}</th>
+              <th scope="col">{{ t('weather.condition') }}</th>
+            </tr>
+          </thead>
+          <tbody v-for="day in days" :key="day.key">
+            <tr class="day">
+              <th scope="colgroup" colspan="5" class="eyebrow">{{ day.label }}</th>
+            </tr>
+            <tr
+              v-for="p in day.points"
+              :key="p.time.toISOString()"
+              :class="{ dark: inDarkWindow(p.time) }"
+            >
+              <td class="numeric">
+                <span v-if="inDarkWindow(p.time)" class="marker" :aria-label="t('weather.darkRowMarker')">●</span>
+                {{ formatAtOffset(p.time, p.offsetMinutes) }}
+              </td>
+              <td class="numeric cover">{{ Math.round(p.cloudCover) }}%</td>
+              <td class="numeric">{{ Math.round(p.temp) }}°</td>
+              <td class="numeric">{{ Math.round(p.humidity) }}%</td>
+              <td class="desc">
+                <Icon :name="weatherIcon(p.weatherCode)" class="wx" />
+                {{ pick(p.description) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </template>
   </div>
 </template>
@@ -109,10 +113,6 @@ const days = computed(() =>
   color: var(--ember);
 }
 
-.day-label {
-  margin: 0 0 0.375rem;
-}
-
 /* Wide content scrolls inside its own box; the panel must never scroll sideways. */
 .scroller {
   overflow-x: auto;
@@ -135,6 +135,25 @@ th {
   text-transform: uppercase;
   text-align: left;
   color: var(--haze);
+}
+
+/* Stated once now, so it has to survive the scroll: with three days in one table,
+   CLOUD and HUMIDITY are both a bare percentage once the header is out of sight. */
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel);
+}
+
+.day th {
+  padding-top: 1.25rem;
+  border-bottom: none;
+  color: var(--star);
+}
+
+tbody:first-of-type .day th {
+  padding-top: 0.25rem;
 }
 
 td {
