@@ -62,7 +62,7 @@ Why a new module rather than adding to `astro.ts`: every existing function there
   - `moonTonight(now: Date, offsetMinutes: number): MoonTonight`
   - `moonBrightnessKey(illumination: number): string`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/lib/moonTonight.test.ts`:
 
@@ -149,12 +149,12 @@ describe('moonBrightnessKey', () => {
 })
 ```
 
-- [ ] **Step 2: Run the test and watch it fail**
+- [x] **Step 2: Run the test and watch it fail**
 
 Run: `pnpm vitest run src/lib/moonTonight.test.ts`
 Expected: FAIL — `Failed to resolve import "./moonTonight"`.
 
-- [ ] **Step 3: Write the module**
+- [x] **Step 3: Write the module**
 
 Create `src/lib/moonTonight.ts`:
 
@@ -225,19 +225,19 @@ export function moonBrightnessKey(illumination: number): string {
 }
 ```
 
-- [ ] **Step 4: Run the test and watch it pass**
+- [x] **Step 4: Run the test and watch it pass**
 
 Run: `pnpm vitest run src/lib/moonTonight.test.ts`
 Expected: PASS, 9 tests.
 
 If the two ephemeris anchors fail, do **not** loosen them until you have checked the dates against the running app — they were taken from its own output on those days.
 
-- [ ] **Step 5: Typecheck**
+- [x] **Step 5: Typecheck**
 
 Run: `pnpm typecheck`
 Expected: no output, exit 0.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/lib/moonTonight.ts src/lib/moonTonight.test.ts
@@ -274,7 +274,7 @@ EOF
 - Consumes: `moonTonight`, `moonBrightnessKey` from Task 1; `MoonGlyph.vue` (props `illumination: number`, `phaseKey: MoonPhaseKey`, `size: number` — see its use in `NightBar.vue`); `useI18n()` returning `{ t }`.
 - Produces: `MoonTonight.vue`, a component taking one optional prop `now?: Date` (injectable so the block can be driven to a known date when checking it in a browser).
 
-- [ ] **Step 1: Add the English copy**
+- [x] **Step 1: Add the English copy**
 
 In `src/locales/en.ts`, immediately after the closing `},` of the `app` block:
 
@@ -288,7 +288,7 @@ In `src/locales/en.ts`, immediately after the closing `},` of the `app` block:
   },
 ```
 
-- [ ] **Step 2: Add the Indonesian copy**
+- [x] **Step 2: Add the Indonesian copy**
 
 In `src/locales/id.ts`, at the matching position:
 
@@ -302,12 +302,12 @@ In `src/locales/id.ts`, at the matching position:
   },
 ```
 
-- [ ] **Step 3: Prove the typecheck catches a missing translation**
+- [x] **Step 3: Prove the typecheck catches a missing translation**
 
 Temporarily delete the `bright` line from `id.ts` and run `pnpm typecheck`.
 Expected: FAIL naming `bright`. Put the line back and confirm it passes. This is the guard that keeps the two dictionaries in step; verify it works rather than assuming it.
 
-- [ ] **Step 4: Write the component**
+- [x] **Step 4: Write the component**
 
 Create `src/components/MoonTonight.vue`:
 
@@ -388,7 +388,7 @@ const percent = computed(() => Math.round(moon.value.illumination * 100))
 </style>
 ```
 
-- [ ] **Step 5: Render it in the empty panel**
+- [x] **Step 5: Render it in the empty panel**
 
 In `src/App.vue`, inside `<div class="empty-text">`, after the two existing paragraphs:
 
@@ -406,12 +406,12 @@ And with the other component imports near `src/App.vue:19`:
 import MoonTonight from './components/MoonTonight.vue'
 ```
 
-- [ ] **Step 6: Run the full suite and typecheck**
+- [x] **Step 6: Run the full suite and typecheck**
 
 Run: `pnpm test && pnpm typecheck`
 Expected: all tests pass (233 + 9 = 242), typecheck silent.
 
-- [ ] **Step 7: Look at it, in four states**
+- [x] **Step 7: Look at it, in four states**
 
 Run `pnpm dev`, then with **no point picked** check:
 
@@ -428,7 +428,7 @@ Run `pnpm dev`, then with **no point picked** check:
    Expected: `[]`.
 4. **390px wide, and maximized** — the block wraps without horizontal overflow, and at full width the meaning line is held by its `max-width` rather than running the width of the window.
 
-- [ ] **Step 8: Record the rule in CLAUDE.md**
+- [x] **Step 8: Record the rule in CLAUDE.md**
 
 In the Design section, after the `MoonGlyph.vue` paragraph:
 
@@ -436,7 +436,7 @@ In the Design section, after the `MoonGlyph.vue` paragraph:
 **The empty state answers what does not need a location.** Phase and illuminated fraction are geocentric — the same number for every observer on Earth at a given instant — so `MoonTonight.vue` can state them before a point is picked. Moonrise, moonset and time-above-horizon are not, vary by tens of minutes across the archipelago, and belong to the readout that appears after a click. `src/lib/moonTonight.ts` exposes only the two that travel; completing the set is the mistake it exists to prevent.
 ```
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/locales/en.ts src/locales/id.ts src/components/MoonTonight.vue src/App.vue CLAUDE.md
