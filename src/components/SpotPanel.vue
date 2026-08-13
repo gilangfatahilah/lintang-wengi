@@ -229,8 +229,13 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
   background: var(--azure);
 }
 
+/*
+ * No `margin-top: auto`. Pushing this to the floor of the panel is what put 155px
+ * of nothing between the forecast it credits and the credit itself, which is the
+ * opposite of the rule it exists to satisfy: BMKG's attribution belongs next to
+ * their data. Blank space below the credit is just a readout that has ended.
+ */
 .attribution {
-  margin-top: auto;
   padding-top: 0.5rem;
   font-size: 0.6875rem;
   line-height: 1.5;
