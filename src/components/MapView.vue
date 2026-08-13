@@ -3,6 +3,7 @@ import { onMounted, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import maplibregl, { type StyleSpecification } from 'maplibre-gl'
 import type { LatLng } from '@/types'
 import type { LpMeta } from '@/lib/lightPollution'
+import { ICONS } from '@/lib/icons'
 import { useI18n } from '@/composables/useI18n'
 import Icon from './Icon.vue'
 
@@ -123,9 +124,26 @@ watch(
     if (!marker.value) {
       const el = document.createElement('div')
       el.className = 'spot-marker'
-      marker.value = new maplibregl.Marker({ element: el })
+      // The glyph goes in a child, not on the marker element: MapLibre owns that
+      // element's `transform` for positioning, so animating it there would fight
+      // the map on every pan.
+      el.innerHTML = `<svg class="pin" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ICONS.pin}</svg>`
+      // The tip names the point, so the glyph hangs above it rather than centring on it.
+      marker.value = new maplibregl.Marker({ element: el, anchor: 'bottom' })
     }
     marker.value.setLngLat([point.lon, point.lat]).addTo(m)
+
+    // Replay the drop on every pick, not just the first. The element is reused, so
+    // the class has to come off and go back on with a reflow between -- otherwise
+    // picking a second point moves a pin that never acknowledges the tap. Done in
+    // CSS rather than the Web Animations API so `prefers-reduced-motion` still
+    // neutralises it from one place.
+    const pin = marker.value.getElement().firstElementChild
+    if (pin) {
+      pin.classList.remove('drop')
+      void (pin as HTMLElement).offsetWidth
+      pin.classList.add('drop')
+    }
   },
 )
 
@@ -202,21 +220,39 @@ watch(overlayVisible, (visible) => {
 <style>
 /* Marker element lives outside the component's scope, so this rule is global. */
 .spot-marker {
-  width: 18px;
-  height: 18px;
-  border: 1.5px solid var(--azure);
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(7, 8, 11, 0.8);
+  width: 26px;
+  height: 26px;
+  color: var(--azure);
 }
 
-.spot-marker::after {
-  content: '';
+.spot-marker .pin {
   display: block;
-  width: 2px;
-  height: 2px;
-  margin: 6.5px auto;
-  background: var(--azure);
-  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  /* A dark edge rather than a border: the pin has to stay legible over the black of
+     open sea and over the glare of a city, and only one of those needs the outline. */
+  filter: drop-shadow(0 0 1px rgba(7, 8, 11, 0.95)) drop-shadow(0 1px 2px rgba(7, 8, 11, 0.6));
+}
+
+/*
+ * Dropped rather than simply appearing, because outdoors and one-handed the finger
+ * that placed it is covering the spot. Transform and opacity only, so field mode is
+ * untouched; `prefers-reduced-motion` collapses it globally in styles.css.
+ */
+.spot-marker .pin.drop {
+  animation: spot-drop 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  transform-origin: 50% 100%;
+}
+
+@keyframes spot-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-7px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Keep MapLibre's chrome in the app's register rather than its default blue-grey. */

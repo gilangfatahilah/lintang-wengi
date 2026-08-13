@@ -48,6 +48,7 @@ export type IconName =
   | 'district'
   // Sky and score
   | 'glow'
+  | 'pin'
   | 'moon'
   | 'galaxy'
   | 'planet'
@@ -183,6 +184,20 @@ export const ICONS: Record<IconName, string> = {
     '<path d="M12 7.5c3.9 0 7 3.9 7 8.7H5c0-4.8 3.1-8.7 7-8.7z"/>' +
     `<g ${S} stroke-width="1.9"><path d="M2 20.2h20"/></g>` +
     `<g ${S} stroke-width="1.6" opacity="0.75"><path d="M12 1.6v2.8M4.6 4.2l1.9 2.2M19.4 4.2l-1.9 2.2"/></g>`,
+
+  /*
+   * The map marker. The point it names is the tip, not the centre, so whatever
+   * places it has to anchor at the bottom -- centring a pin puts the tip half a
+   * glyph below the coordinate the app actually sampled.
+   *
+   * The head is a real hole, cut with `fill-rule="evenodd"` rather than filled with
+   * a background colour, so the map shows through it. That is what keeps the pin
+   * readable over both the black of open sea and the glare of a city, and it is
+   * also why it survives field mode: there is no second colour to remap.
+   */
+  pin:
+    '<path fill-rule="evenodd" d="M12 22.8c-.7-.9-8-9.4-8-13.8a8 8 0 1 1 16 0c0 4.4-7.3 12.9-8 13.8z' +
+    'm0-10.4a3.3 3.3 0 1 0 0-6.6 3.3 3.3 0 0 0 0 6.6z"/>',
 
   moon: '<path d="M20.3 14.8A9.2 9.2 0 0 1 9.2 3.7 9.6 9.6 0 1 0 20.3 14.8z"/>',
 

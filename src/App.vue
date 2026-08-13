@@ -60,6 +60,31 @@ const {
   restore: panelRestore,
 } = usePanelLayout()
 
+/**
+ * True for one animation's length after the panel changes state, so whatever now
+ * occupies the panel column can announce itself.
+ *
+ * The column's *width* cannot be animated, and it is worth writing down why so this
+ * is not "fixed" later: the three states declare different numbers of grid tracks
+ * (`1fr auto <size>` against `1fr auto` and `0 1fr`), and CSS cannot interpolate
+ * between track lists of different lengths. Nor could they simply be padded to
+ * match -- interpolation also needs the track *types* to line up, and these states
+ * mix lengths with `minmax()` and `auto`. Making the width slide means rewriting the
+ * column out of grid tracks entirely, which is a change to the most load-bearing
+ * layout in the app for the sake of 200ms.
+ *
+ * So the contents transition and the track snaps. Gated on the state change rather
+ * than left on the elements, because the panel also mounts when a point is picked,
+ * and the pin's own drop already acknowledges that.
+ */
+const panelSwitching = ref(false)
+let switchTimer: ReturnType<typeof setTimeout> | undefined
+watch(panelState, () => {
+  panelSwitching.value = true
+  clearTimeout(switchTimer)
+  switchTimer = setTimeout(() => (panelSwitching.value = false), 200)
+})
+
 /** Cancels an in-flight forecast when the user clicks somewhere else. */
 let pending: AbortController | null = null
 
@@ -190,6 +215,7 @@ watch(fieldMode, (on) => {
     <main
       ref="panelFrame"
       class="body"
+      :class="{ switching: panelSwitching }"
       :data-panel="panelState"
       :data-placement="panelPlacement"
       :style="{ '--panel-size': `${panelSize}px` }"
@@ -397,6 +423,41 @@ watch(fieldMode, (on) => {
 
 .body[data-panel='maximized'] {
   grid-template-columns: 0 minmax(0, 1fr);
+}
+
+/*
+ * The panel column changing hands. Transform and opacity only, on the element that
+ * arrives -- the track width itself snaps, for the reason set out in the script.
+ */
+.body.switching > :last-child {
+  animation: panel-switch 180ms ease-out;
+}
+
+@keyframes panel-switch {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Below the map the column arrives from underneath, not from the side. */
+.body[data-placement='below'].switching > :last-child {
+  animation-name: panel-switch-below;
+}
+
+@keyframes panel-switch-below {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .body > :last-child {

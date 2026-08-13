@@ -293,6 +293,20 @@ input::-webkit-search-cancel-button {
   overflow-y: auto;
   background: rgba(14, 17, 23, 0.97);
   border: var(--rule);
+  /* The only layer in the app that floats over another. Appearing instantly reads
+     as a glitch rather than as an answer; 120ms is enough to say it arrived. */
+  animation: results-in 120ms ease-out;
+}
+
+@keyframes results-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* The glyph spans both text rows so it reads as belonging to the whole result

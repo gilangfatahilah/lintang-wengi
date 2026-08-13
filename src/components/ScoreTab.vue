@@ -3,7 +3,7 @@
  * The verdict and the evidence behind it: should you go tonight, and what is
  * holding it back. Moved out of SpotPanel unchanged when the panel gained tabs.
  */
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Forecast, LatLng, MoonConditions, NightWindow, Score } from '@/types'
 import { bortleText } from '@/lib/lightPollution'
 import { ratingText, limitingFactorText } from '@/lib/scoring'
@@ -38,6 +38,24 @@ const core = computed(() =>
 )
 
 /**
+ * Marks the moment the forecast lands.
+ *
+ * The rating renders immediately from light pollution and the moon, and reads
+ * *higher* while it is provisional because a missing term is dropped rather than
+ * guessed. When cloud cover arrives the number can therefore fall while the reader
+ * is looking straight at it. Left unmarked that reads as a misread; marked, it reads
+ * as an arrival. Fires only on the false-to-true edge, so re-picking a point does
+ * not set it off -- the pin's own drop already acknowledges that.
+ */
+const settling = ref(false)
+watch(
+  () => props.score?.complete,
+  (isComplete, was) => {
+    if (isComplete === true && was === false) settling.value = true
+  },
+)
+
+/**
  * "rises 06:41 · sets 13:58 WIB", with either half dropped when it does not happen.
  *
  * A null rise or set is an event that falls outside the night, not a value the app
@@ -57,7 +75,12 @@ const moonTimes = computed(() => {
 <template>
   <div class="tab">
     <!-- The verdict, stated before the evidence. -->
-    <section v-if="score" class="verdict">
+    <section
+      v-if="score"
+      class="verdict"
+      :class="{ settling }"
+      @animationend="settling = false"
+    >
       <div class="rating">
         <span class="numeric value">{{ score.rating }}</span>
         <span class="denom">/5</span>
@@ -148,6 +171,23 @@ const moonTimes = computed(() => {
   padding: 0.875rem;
   background: var(--brand);
   border-left: 2px solid var(--azure);
+}
+
+/* Transform and opacity only. Flashing the background would animate a token, and
+   field mode exists precisely so that nothing changes colour unasked. */
+.verdict.settling {
+  animation: verdict-settle 180ms ease-out;
+}
+
+@keyframes verdict-settle {
+  from {
+    opacity: 0.5;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .rating {
