@@ -15,3 +15,7 @@ public/data/lp-overlay.png
 scripts/raw/
 *.tif
 *.tiff
+
+# Planning notes stay local
+PLAN.md
+docs/
