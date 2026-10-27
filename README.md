@@ -1,68 +1,70 @@
 # Lintang Wengi
 
-Cari lokasi astrophotography dan stargazing di Indonesia. Klik satu titik di peta, dapat skor kelayakan malam ini dari gabungan polusi cahaya, prakiraan tutupan awan BMKG, dan gangguan cahaya bulan — dihitung untuk jendela gelap astronomis di lokasi tersebut.
+Find astrophotography and stargazing locations in Indonesia. Click a point on the map — or search for a place, or use your device location — and get a 1–5 viability score for tonight, combining light pollution, BMKG cloud cover forecast, and moonlight interference, computed for the astronomical dark window at that location.
 
-Status: **Phase 1 (MVP)** berjalan. Lihat [`PLAN.md`](PLAN.md) untuk lingkup per fase.
+The interface is bilingual (English / Indonesian) and has a red-only field mode that preserves dark adaptation outdoors.
 
-## Menjalankan
+Status: **Phase 1 (MVP)** is implemented.
+
+## Running
 
 ```bash
 pnpm install
-pnpm data:lp        # wajib: bikin grid polusi cahaya (artefaknya tidak di-commit)
+pnpm data:lp        # required: builds the light pollution grid (its artifacts are not committed)
 pnpm dev            # http://localhost:5173
 ```
 
-`pnpm data:wilayah` tidak perlu dijalankan — indeks kecamatannya sudah ikut ter-commit. Jalankan hanya kalau kode wilayah Kemendagri berubah.
+You do not need to run `pnpm data:wilayah` — the kecamatan index is committed. Run it only when Kemendagri revises its region codes.
 
-## Perintah
+## Commands
 
-| Perintah | Kegunaan |
+| Command | Purpose |
 |---|---|
-| `pnpm dev` | Dev server. `/api/forecast` diteruskan langsung ke BMKG oleh Vite. |
-| `pnpm test` | Unit test (`src/lib/`). |
-| `pnpm build` | Typecheck + build produksi. |
-| `pnpm preview:cf` | Build lalu sajikan lewat Cloudflare Workers — jalur produksi sesungguhnya, termasuk proxy. |
-| `pnpm deploy:cf` | Build dan deploy ke Cloudflare Workers. |
-| `pnpm data:lp` | Regenerate grid polusi cahaya (mode stub). |
-| `pnpm data:wilayah` | Regenerate indeks kecamatan. Tambahkan `--validate` untuk mengecek kode adm4 ke API BMKG. |
+| `pnpm dev` | Dev server. Vite forwards `/api/forecast` straight to BMKG. |
+| `pnpm test` | Unit tests (`src/lib/`). |
+| `pnpm build` | Typecheck + production build. |
+| `pnpm preview:cf` | Build, then serve through Cloudflare Workers — the real production path, proxy included. |
+| `pnpm deploy:cf` | Build and deploy to Cloudflare Workers. |
+| `pnpm data:lp` | Regenerate the light pollution grid (stub mode). |
+| `pnpm data:wilayah` | Regenerate the kecamatan index. Add `--validate` to check adm4 codes against the BMKG API. |
 
-Dev server dan `preview:cf` memakai path `/api/forecast` yang sama, tapi implementasinya beda: Vite mem-proxy langsung, sedangkan produksi memakai [`worker/index.ts`](worker/index.ts). **Uji perubahan pada proxy lewat `pnpm preview:cf`** — perubahan di situ tidak akan terlihat di `pnpm dev`.
+The dev server and `preview:cf` use the same `/api/forecast` path, but different implementations: Vite proxies directly, while production uses [`worker/index.ts`](worker/index.ts). **Test changes to the proxy with `pnpm preview:cf`** — they will not show up under `pnpm dev`.
 
-## Deploy
+## Deploying
 
 ```bash
 npx wrangler login
 pnpm deploy:cf
 ```
 
-Namanya `deploy:cf`, bukan `deploy`, karena pnpm punya subcommand `deploy` bawaan yang menaungi script dengan nama itu — `pnpm deploy` gagal dengan `ERR_PNPM_CANNOT_DEPLOY` dan tidak pernah menyentuh script-nya.
+It is named `deploy:cf` rather than `deploy` because pnpm has a built-in `deploy` subcommand that shadows any script of that name — `pnpm deploy` fails with `ERR_PNPM_CANNOT_DEPLOY` and never reaches the script.
 
-Tidak ada environment variable atau secret. BMKG tidak memerlukan API key.
+There are no environment variables or secrets. BMKG does not require an API key.
 
-Deploy-nya sebagai Cloudflare Worker dengan static assets, bukan Cloudflare Pages. Ini bukan soal teknis: sebagian ISP Indonesia memblokir `pages.dev` di level DNS, sehingga aplikasinya sehat tapi tidak bisa dibuka dari jaringan rumahan. Blokir semacam itu mencocokkan nama domain, dan daftarnya berbeda antar ISP — jadi `workers.dev` pun bukan jaminan untuk semua pengguna. Custom domain adalah satu-satunya perbaikan yang tahan lama.
+The app deploys as a Cloudflare Worker with static assets, not as Cloudflare Pages. This is not a technical choice: some Indonesian ISPs block `pages.dev` at the DNS level, so the app is healthy but unreachable from home networks. Such blocks match on domain name and the lists differ between ISPs — so `workers.dev` is no guarantee for every user either. A custom domain is the only durable fix.
 
-## Catatan data
+## Data notes
 
-**Polusi cahaya saat ini masih data sementara**, disintesis dari posisi kota — angkanya masuk akal tapi bukan hasil pengukuran, dan UI menyatakan itu. Kota menengah cenderung terbaca terlalu terang di data stub ini.
+**Light pollution is currently placeholder data**, synthesised from city positions — the values are plausible but not measured, and the UI says so. Mid-sized cities tend to read too bright in this stub.
 
-Untuk memakai data asli (World Atlas 2015, Falchi dkk.):
+To use real data (World Atlas 2015, Falchi et al.):
 
 ```bash
 mkdir -p scripts/raw && cd scripts/raw
 curl -O https://datapub.gfz-potsdam.de/download/10.5880.GFZ.1.4.2016.001/World_Atlas_2015.zip
 unzip World_Atlas_2015.zip && cd ../..
 
-pip install rasterio    # wheel-nya sudah membundel GDAL, tidak perlu GDAL sistem
+pip install rasterio    # the wheels bundle GDAL; no system GDAL needed
 python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015.tif
-pnpm test               # suite kalibrasi otomatis aktif setelah data asli terpasang
+pnpm test               # the calibration suite activates automatically once real data is in place
 ```
 
-Unduhannya 684 MB (±2,9 GB setelah diekstrak). Stub dan data asli menghasilkan kontrak yang sama, jadi pergantiannya cuma tukar file tanpa ubah kode.
+The download is 684 MB (~2.9 GB extracted). The stub and real data emit the same contract, so switching is a file replacement with no code change.
 
-**Prakiraan cuaca dari BMKG** (Badan Meteorologi, Klimatologi, dan Geofisika) via [API publik](https://data.bmkg.go.id/prakiraan-cuaca/). Mencantumkan BMKG sebagai sumber data adalah syarat penggunaan API tersebut. Peta dasar dari CARTO dan OpenStreetMap.
+**Weather forecasts come from BMKG** (Badan Meteorologi, Klimatologi, dan Geofisika — Indonesia's meteorological agency) via its [public API](https://data.bmkg.go.id/prakiraan-cuaca/). Crediting BMKG as the data source is a condition of using that API. Base map from CARTO and OpenStreetMap.
 
-Perhitungan astronomi (senja, fase dan posisi bulan) dilakukan di sisi klien dengan `astronomy-engine`, tanpa API eksternal.
+Astronomical calculations (twilight, moon phase and position) run client-side with `astronomy-engine`, with no external API.
 
-## Arsitektur
+## Architecture
 
-Detail arsitektur, kendala yang membentuk desainnya, dan hal-hal yang mudah salah ada di [`CLAUDE.md`](CLAUDE.md).
+Architecture details, the constraints that shaped the design, and the things that are easy to get wrong are in [`CLAUDE.md`](CLAUDE.md).
