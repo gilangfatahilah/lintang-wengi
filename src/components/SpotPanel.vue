@@ -181,17 +181,20 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
 }
 
 
+/* The place is lettered the way an atlas letters it: serif, and the largest type in
+   the panel bar the verdict. */
 .place {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: 1.1;
+  text-wrap: balance;
 }
 
 .coords {
-  margin: 0;
-  font-size: 0.75rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
   color: var(--haze);
 }
 
@@ -207,12 +210,9 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0 0 0.4375rem;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  padding: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   color: var(--haze);
 }
 
@@ -236,8 +236,9 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
  * their data. Blank space below the credit is just a readout that has ended.
  */
 .attribution {
-  padding-top: 0.5rem;
-  font-size: 0.6875rem;
+  padding-top: 1rem;
+  border-top: var(--rule-section);
+  font-size: 0.75rem;
   line-height: 1.5;
   color: var(--haze);
 }
@@ -259,6 +260,6 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
 /* Only a caveat while the grid is placeholder data; once it is real this is a
    statement of provenance and has no business looking like a warning. */
 .fine.stub {
-  color: var(--ember-dim);
+  color: var(--ember);
 }
 </style>

@@ -92,6 +92,7 @@ export const id: Messages = {
 
   score: {
     outOf: '/5',
+    ratingAria: '{rating} dari 5',
     rating: {
       5: 'Sangat baik',
       4: 'Baik',

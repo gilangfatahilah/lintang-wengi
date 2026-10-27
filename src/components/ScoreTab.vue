@@ -81,10 +81,19 @@ const moonTimes = computed(() => {
       :class="{ settling }"
       @animationend="settling = false"
     >
-      <div class="rating">
-        <span class="numeric value">{{ score.rating }}</span>
-        <span class="denom">/5</span>
-      </div>
+      <!-- Five stars, lit to the rating: the way an atlas grades a sky, read before
+           the number is. The number stays, small, for anyone comparing two spots. -->
+      <p class="rating" role="img" :aria-label="t('score.ratingAria', { rating: score.rating })">
+        <Icon
+          v-for="n in 5"
+          :key="n"
+          name="star"
+          :size="1"
+          class="star"
+          :class="{ lit: n <= score.rating }"
+        />
+        <span class="numeric value" aria-hidden="true">{{ score.rating }}/5</span>
+      </p>
       <div class="verdict-text">
         <p class="label">{{ tx(ratingText(score.rating)) }}</p>
         <p v-if="limitingFactorText(score)" class="reason">
@@ -114,7 +123,7 @@ const moonTimes = computed(() => {
 
     <dl class="readout">
       <div class="row">
-        <dt class="eyebrow">{{ t('panel.tabs.sky') }}</dt>
+        <dt class="label-quiet">{{ t('panel.tabs.sky') }}</dt>
         <dd>
           <span class="numeric strong">
             {{ bortle !== null ? t('score.factor.darkness', { bortle }) : '—' }}
@@ -124,7 +133,7 @@ const moonTimes = computed(() => {
       </div>
 
       <div class="row">
-        <dt class="eyebrow">{{ t('moon.heading') }}</dt>
+        <dt class="label-quiet">{{ t('moon.heading') }}</dt>
         <dd>
           <span class="numeric strong">
             <MoonGlyph
@@ -145,7 +154,7 @@ const moonTimes = computed(() => {
       </div>
 
       <div v-if="forecast" class="row">
-        <dt class="eyebrow">{{ t('weather.forecastPoint') }}</dt>
+        <dt class="label-quiet">{{ t('weather.forecastPoint') }}</dt>
         <dd>
           <span class="numeric strong">{{ forecast.location.desa }}</span>
           <span v-if="distanceKm !== null" class="detail numeric">
@@ -166,11 +175,10 @@ const moonTimes = computed(() => {
 
 .verdict {
   display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.875rem;
-  background: var(--brand);
-  border-left: 2px solid var(--azure);
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: var(--rule-section);
 }
 
 /* Transform and opacity only. Flashing the background would animate a token, and
@@ -192,19 +200,27 @@ const moonTimes = computed(() => {
 
 .rating {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  font-size: 1.625rem;
   line-height: 1;
 }
 
-.value {
-  font-family: var(--font-display);
-  font-size: 2.5rem;
-  font-weight: 700;
+/* Unlit stars are the same glyph, faint -- not a second outline drawing, which at
+   this size would read as a different shape rather than an absent one. */
+.star {
+  color: var(--star);
+  opacity: 0.18;
 }
 
-.denom {
-  font-family: var(--font-mono);
-  font-size: 0.875rem;
+.star.lit {
+  opacity: 1;
+}
+
+.value {
+  margin-left: 0.5rem;
+  font-size: 0.8125rem;
   color: var(--haze);
 }
 
@@ -215,13 +231,14 @@ const moonTimes = computed(() => {
 .label {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 0.9375rem;
+  font-size: 1.375rem;
   font-weight: 500;
+  line-height: 1.2;
 }
 
 .reason {
-  margin: 0.125rem 0 0;
-  font-size: 0.8125rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
   color: var(--haze);
 }
 
@@ -244,8 +261,7 @@ const moonTimes = computed(() => {
 
 .status {
   margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--haze);
 }
 
@@ -261,20 +277,20 @@ const moonTimes = computed(() => {
 .readout {
   display: flex;
   flex-direction: column;
+  gap: 0.875rem;
   margin: 0;
-  border-top: var(--rule);
+  padding-top: 1.25rem;
+  border-top: var(--rule-section);
 }
 
 .row {
   display: grid;
-  grid-template-columns: 6rem 1fr;
+  grid-template-columns: 6.5rem 1fr;
   gap: 0.75rem;
-  padding: 0.6875rem 0;
-  border-bottom: var(--rule);
 }
 
 .row dt {
-  padding-top: 0.1875rem;
+  padding-top: 0.0625rem;
 }
 
 .row dd {
@@ -286,12 +302,12 @@ const moonTimes = computed(() => {
 }
 
 .strong {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 500;
 }
 
 .detail {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.4;
   color: var(--haze);
 }

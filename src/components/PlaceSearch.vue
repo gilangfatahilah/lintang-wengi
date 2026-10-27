@@ -213,7 +213,7 @@ function useMyLocation() {
 .field {
   display: flex;
   align-items: center;
-  background: rgba(14, 17, 23, 0.94);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
   border: var(--rule);
 }
 
@@ -223,8 +223,7 @@ input {
   padding: 0.5rem 0.625rem;
   background: none;
   border: none;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: var(--star);
 }
 
@@ -274,8 +273,7 @@ input::-webkit-search-cancel-button {
 .msg {
   margin: 0.25rem 0 0;
   padding: 0.25rem 0.375rem;
-  background: rgba(14, 17, 23, 0.94);
-  font-family: var(--font-mono);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
   font-size: 0.6875rem;
   line-height: 1.4;
   color: var(--haze);
@@ -291,7 +289,7 @@ input::-webkit-search-cancel-button {
   list-style: none;
   max-height: 16rem;
   overflow-y: auto;
-  background: rgba(14, 17, 23, 0.97);
+  background: color-mix(in srgb, var(--panel) 97%, transparent);
   border: var(--rule);
   /* The only layer in the app that floats over another. Appearing instantly reads
      as a glitch rather than as an answer; 120ms is enough to say it arrived. */
@@ -342,7 +340,6 @@ input::-webkit-search-cancel-button {
 .results li.empty {
   display: block;
   cursor: default;
-  font-family: var(--font-mono);
   font-size: 0.6875rem;
   color: var(--haze);
 }
@@ -353,7 +350,6 @@ input::-webkit-search-cancel-button {
 }
 
 .meta {
-  font-family: var(--font-mono);
   font-size: 0.6875rem;
   color: var(--haze);
 }

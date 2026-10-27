@@ -165,7 +165,7 @@ const ariaLabel = computed(() => {
 <template>
   <figure class="nightbar">
     <figcaption class="head">
-      <span class="eyebrow">{{ t('night.astronomicalDark') }}</span>
+      <span class="label-quiet">{{ t('night.astronomicalDark') }}</span>
       <span class="numeric range">{{ darkLabel }}</span>
     </figcaption>
 
@@ -309,7 +309,6 @@ svg {
   position: relative;
   height: 1rem;
   margin-top: 0.125rem;
-  font-family: var(--font-mono);
   font-size: 0.6875rem;
   color: var(--haze);
 }
@@ -331,7 +330,7 @@ svg {
 }
 
 .axis {
-  stroke: rgba(232, 228, 218, 0.16);
+  stroke: color-mix(in srgb, var(--star) 16%, transparent);
   stroke-width: 1;
 }
 
@@ -378,7 +377,6 @@ svg {
   place-items: center;
   margin: 0;
   color: var(--haze);
-  font-family: var(--font-mono);
   font-size: 0.6875rem;
   font-style: italic;
 }
@@ -390,7 +388,6 @@ svg {
   margin: 0.375rem 0 0;
   padding: 0;
   list-style: none;
-  font-family: var(--font-mono);
   font-size: 0.6875rem;
   color: var(--haze);
 }

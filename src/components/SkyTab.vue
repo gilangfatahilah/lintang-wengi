@@ -99,7 +99,7 @@ function whenLabel(daysAway: number): string {
 
       <!-- The Milky Way is the headline this app was built around, so it leads. -->
       <section v-if="milkyWay" class="milkyway" :data-verdict="milkyWay.verdict">
-        <h3 class="eyebrow">{{ t('milkyWay.heading') }}</h3>
+        <h3 class="label-quiet">{{ t('milkyWay.heading') }}</h3>
         <p class="verdict">{{ tx(verdictText(milkyWay.verdict)) }}</p>
         <p class="reason">{{ tx(milkyWay.reason) }}</p>
         <dl v-if="coreSpan" class="facts numeric">
@@ -129,17 +129,17 @@ function whenLabel(daysAway: number): string {
       </section>
 
       <section>
-        <h3 class="eyebrow">{{ t('sky.visibleTonight') }}</h3>
+        <h3 class="label-quiet">{{ t('sky.visibleTonight') }}</h3>
         <p class="lede">{{ t('sky.visibleLede') }}</p>
         <ObjectTable :entries="entries" :offset-minutes="offsetMinutes" />
       </section>
 
       <section class="ahead">
-        <h3 class="eyebrow">{{ t('sky.planAhead') }}</h3>
+        <h3 class="label-quiet">{{ t('sky.planAhead') }}</h3>
         <MoonCalendar :nights="nights" :offset-minutes="offsetMinutes" />
 
         <div v-if="showers.length" class="showers">
-          <h4 class="eyebrow sub">{{ t('meteor.heading') }}</h4>
+          <h4 class="label-quiet sub">{{ t('meteor.heading') }}</h4>
           <ul>
             <li v-for="s in showers" :key="s.shower.id">
               <div class="line">

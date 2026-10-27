@@ -70,7 +70,7 @@ const runLabel = computed(() => {
 <template>
   <figure class="calendar">
     <figcaption class="head">
-      <span class="eyebrow">{{ t('moonCalendar.heading') }}</span>
+      <span class="label-quiet">{{ t('moonCalendar.heading') }}</span>
       <span v-if="runLabel" class="numeric range">{{ runLabel }}</span>
     </figcaption>
 
@@ -144,13 +144,12 @@ svg {
 }
 
 .axis {
-  stroke: rgba(232, 228, 218, 0.16);
+  stroke: color-mix(in srgb, var(--star) 16%, transparent);
   stroke-width: 1;
 }
 
 .tick {
   fill: var(--haze);
-  font-family: var(--font-mono);
   font-size: 9px;
 }
 

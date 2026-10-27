@@ -12,17 +12,22 @@
  * says which one it is, because a token that means two things -- as --ember once did,
  * being both "accent" and "warning" -- cannot be changed without changing both.
  *
- * Type: Space Grotesk carries headings, IBM Plex Mono carries every figure. Almost
- * all content here is numbers -- times, percentages, coordinates -- and monospace
- * figures let them be read at a glance and compared down a column.
+ * The surfaces are the ink of a printed star atlas rather than neutral black: the
+ * same navy as the logo, taken down to almost nothing. Text is the atlas's paper.
+ *
+ * Type: Newsreader, a serif, names places and states the verdict -- the two things
+ * an atlas would letter by hand. Everything else, figures included, is Atkinson
+ * Hyperlegible Next, drawn for legibility under poor conditions, which is what a
+ * screen read at arm's length in the dark is. Its tabular figures still line up
+ * down a column, so nothing here needs a monospace face.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap');
 
 :root {
-  --void: #07080b;
-  --panel: #0e1117;
-  --panel-raised: #151a23;
+  --void: #080d1c;
+  --panel: #0c1428;
+  --panel-raised: #13203d;
 
   /*
    * Identity and interaction. --brand is the logo navy exactly as drawn; at 1.6:1
@@ -34,12 +39,15 @@
   --azure: #6c9be0;
   --azure-dim: #2a4a80;
 
-  /* Warning, and nothing else: errors, the limiting factor, an incomplete score. */
-  --ember: #ff5a33;
-  --ember-dim: #7d2c1b;
+  /*
+   * Warning, and nothing else: errors, the limiting factor, an incomplete score.
+   * Ochre, the colour of an annotation inked onto a chart, not a vermilion alarm.
+   */
+  --ember: #e3a045;
+  --ember-dim: #6b4a1c;
 
-  --star: #e8e4da;
-  --haze: #8b8f9a;
+  --star: #e6dfca;
+  --haze: #8791a8;
 
   /*
    * "Good": clear sky, a dark night, an object worth pointing at. Teal rather than
@@ -48,13 +56,14 @@
    */
   --clear: #5fd6a6;
   /* Fill of the dark-window band in the night bar. */
-  --night-band: #01030a;
+  --night-band: #04081a;
 
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-body: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
 
-  --rule: 1px solid rgba(232, 228, 218, 0.09);
+  --rule: 1px solid rgba(230, 223, 202, 0.08);
+  /* Between sections only, like a graticule: present, but never the loudest line. */
+  --rule-section: 1px dashed rgba(230, 223, 202, 0.14);
   --panel-width: 25rem;
 
   color-scheme: dark;
@@ -72,6 +81,8 @@
   --star: #ff6a45;
   --haze: #9e3a24;
   --clear: #ff5a33;
+  --ember: #ff8a5c;
+  --ember-dim: #6a2414;
   --brand: #1a0708;
   --azure: #ff6a45;
   --azure-dim: #9e3a24;
@@ -110,7 +121,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button {
+button,
+input {
   font: inherit;
   color: inherit;
   background: none;
@@ -147,19 +159,19 @@ button {
   outline-offset: 2px;
 }
 
-/* Small caps eyebrow used to label every section of the readout. */
-.eyebrow {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+/*
+ * A section label: sentence case, the reading size, set back in --haze. It names a
+ * group without shouting over the values inside it.
+ */
+.label-quiet {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
   color: var(--haze);
 }
 
 .numeric {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {

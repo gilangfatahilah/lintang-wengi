@@ -25,6 +25,10 @@ let resizeObserver: ResizeObserver | null = null
  * CARTO's dark basemap, free for use with attribution. A dark base is not just a
  * style choice here: this map is read at night, and it lets the light pollution
  * overlay be the brightest thing on screen, which is the point.
+ *
+ * Every tile needs `?key=`. Without one CARTO still answers 200, but with a grey
+ * "API KEY REQUIRED" tile instead of the map — nothing errors, so check the
+ * picture, not the status.
  */
 const style: StyleSpecification = {
   version: 8,
@@ -32,9 +36,7 @@ const style: StyleSpecification = {
     carto: {
       type: 'raster',
       tiles: [
-        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-        'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-        'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+        `https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png?key=${import.meta.env.VITE_CARTO_API_KEY}`,
       ],
       tileSize: 256,
       attribution: '© OpenStreetMap contributors © CARTO',
@@ -196,11 +198,9 @@ watch(overlayVisible, (visible) => {
   bottom: 0.75rem;
   left: 0.75rem;
   padding: 0.4375rem 0.6875rem;
-  background: rgba(14, 17, 23, 0.92);
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
   border: var(--rule);
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.04em;
+  font-size: 0.8125rem;
   color: var(--star);
 }
 
@@ -231,7 +231,7 @@ watch(overlayVisible, (visible) => {
   height: 100%;
   /* A dark edge rather than a border: the pin has to stay legible over the black of
      open sea and over the glare of a city, and only one of those needs the outline. */
-  filter: drop-shadow(0 0 1px rgba(7, 8, 11, 0.95)) drop-shadow(0 1px 2px rgba(7, 8, 11, 0.6));
+  filter: drop-shadow(0 0 1px color-mix(in srgb, var(--void) 95%, transparent)) drop-shadow(0 1px 2px color-mix(in srgb, var(--void) 60%, transparent));
 }
 
 /*
@@ -258,7 +258,7 @@ watch(overlayVisible, (visible) => {
 /* Keep MapLibre's chrome in the app's register rather than its default blue-grey. */
 .maplibregl-ctrl-attrib,
 .maplibregl-ctrl-attrib a {
-  background: rgba(7, 8, 11, 0.8) !important;
+  background: color-mix(in srgb, var(--void) 80%, transparent) !important;
   color: var(--haze) !important;
   font-size: 10px;
 }
@@ -266,7 +266,7 @@ watch(overlayVisible, (visible) => {
 /* The stock zoom buttons are white-on-white and become the brightest thing on
    screen -- the opposite of what this app is for. */
 .maplibregl-ctrl-group {
-  background: rgba(14, 17, 23, 0.92) !important;
+  background: color-mix(in srgb, var(--panel) 92%, transparent) !important;
   border: var(--rule);
   box-shadow: none !important;
 }
@@ -280,6 +280,6 @@ watch(overlayVisible, (visible) => {
 }
 
 .maplibregl-ctrl-group button:hover {
-  background: rgba(232, 228, 218, 0.06) !important;
+  background: color-mix(in srgb, var(--star) 6%, transparent) !important;
 }
 </style>

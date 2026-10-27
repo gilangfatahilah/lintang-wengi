@@ -67,7 +67,7 @@ const days = computed(() =>
           </thead>
           <tbody v-for="day in days" :key="day.key">
             <tr class="day">
-              <th scope="colgroup" colspan="5" class="eyebrow">{{ day.label }}</th>
+              <th scope="colgroup" colspan="5" class="label-quiet">{{ day.label }}</th>
             </tr>
             <tr
               v-for="p in day.points"
@@ -103,7 +103,6 @@ const days = computed(() =>
 .status,
 .note {
   margin: 0;
-  font-family: var(--font-mono);
   font-size: 0.75rem;
   line-height: 1.5;
   color: var(--haze);
@@ -128,11 +127,8 @@ table {
 th {
   padding: 0 0.5rem 0.25rem 0;
   border-bottom: var(--rule);
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 500;
   text-align: left;
   color: var(--haze);
 }

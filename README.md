@@ -11,8 +11,11 @@ Status: **Phase 1 (MVP)** is implemented.
 ```bash
 pnpm install
 pnpm data:lp        # required: builds the light pollution grid (its artifacts are not committed)
+echo 'VITE_CARTO_API_KEY=…' > .env.local   # required: base map key, free at https://carto.com/basemaps/apikey/
 pnpm dev            # http://localhost:5173
 ```
+
+The CARTO key ends up in every tile URL the browser requests, so it cannot be kept secret — restrict it to your domains in the CARTO dashboard instead. Vite bakes it in at build time, so it must also be present wherever `pnpm build` runs.
 
 You do not need to run `pnpm data:wilayah` — the kecamatan index is committed. Run it only when Kemendagri revises its region codes.
 

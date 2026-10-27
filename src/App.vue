@@ -255,9 +255,14 @@ watch(fieldMode, (on) => {
         >
           <Icon name="expand" :size="1.2" />
         </button>
-        <p v-if="score" class="rail-score numeric">
+        <p
+          v-if="score"
+          class="rail-score numeric"
+          role="img"
+          :aria-label="t('score.ratingAria', { rating: score.rating })"
+        >
+          <Icon name="star" :size="0.9" class="rail-star" />
           <span class="rail-value">{{ score.rating }}</span>
-          <span class="rail-denom">/5</span>
         </p>
       </aside>
 
@@ -343,42 +348,34 @@ watch(fieldMode, (on) => {
 /* Two-state segmented control; the active side borrows the field-toggle's accent. */
 .lang {
   display: flex;
-  border: var(--rule);
 }
 
 .lang button {
   padding: 0.375rem 0.5rem;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.06em;
+  font-size: 0.8125rem;
+  font-weight: 500;
   color: var(--haze);
-}
-
-.lang button + button {
-  border-left: var(--rule);
 }
 
 .lang button.on {
   color: var(--star);
-  background: var(--panel-raised);
 }
 
 .field-toggle {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.375rem 0.625rem;
-  border: var(--rule);
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.06em;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  background: var(--panel-raised);
+  font-size: 0.8125rem;
+  font-weight: 500;
   color: var(--haze);
 }
 
 /* A mode indicator, not a warning: this is the state the app is meant to be used in. */
 .field-toggle[aria-pressed="true"] {
   color: var(--azure);
-  border-color: var(--azure-dim);
 }
 
 .load-error {
@@ -386,8 +383,7 @@ watch(fieldMode, (on) => {
   padding: 0.5rem 1rem;
   background: var(--panel-raised);
   border-bottom: 1px solid var(--ember-dim);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--ember);
 }
 
@@ -476,7 +472,7 @@ watch(fieldMode, (on) => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 1.25rem;
+  padding: 1.75rem 1.25rem 1.25rem;
 }
 
 .empty-text {
@@ -523,26 +519,28 @@ watch(fieldMode, (on) => {
 }
 
 .rail-value {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 700;
 }
 
-.rail-denom {
-  font-size: 0.625rem;
-  color: var(--haze);
+.rail-star {
+  margin-bottom: 0.25rem;
 }
 
+/* The empty panel's one statement, lettered like the place names it is waiting for. */
 .lede {
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.75rem;
   font-family: var(--font-display);
-  font-size: 1.0625rem;
-  font-weight: 500;
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: 1.15;
+  text-wrap: balance;
 }
 
 .sub {
   margin: 0;
-  font-size: 0.8125rem;
+  max-width: 34rem;
+  font-size: 0.9375rem;
   line-height: 1.6;
   color: var(--haze);
 }
@@ -582,8 +580,12 @@ watch(fieldMode, (on) => {
 
   .rail-score {
     flex-direction: row;
-    align-items: baseline;
-    gap: 0.125rem;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .rail-star {
+    margin-bottom: 0;
   }
 }
 </style>

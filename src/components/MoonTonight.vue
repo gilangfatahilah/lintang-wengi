@@ -26,15 +26,15 @@ const percent = computed(() => Math.round(moon.value.illumination * 100))
 
 <template>
   <section class="moon-tonight">
-    <h2 class="eyebrow">{{ t('moonTonight.heading') }}</h2>
+    <h2 class="label-quiet">{{ t('moonTonight.heading') }}</h2>
     <p class="phase">
       <MoonGlyph
         :illumination="moon.illumination"
         :phase-key="moon.phaseKey"
-        :size="1.6"
+        :size="2.75"
         class="glyph"
       />
-      <span class="numeric name">{{ t('moon.phase.' + moon.phaseKey) }}</span>
+      <span class="name">{{ t('moon.phase.' + moon.phaseKey) }}</span>
       <span class="numeric pct">{{ percent }}%</span>
     </p>
     <p class="meaning">{{ t(moonBrightnessKey(moon.illumination)) }}</p>
@@ -45,19 +45,20 @@ const percent = computed(() => Math.round(moon.value.illumination * 100))
 .moon-tonight {
   margin-top: 1.75rem;
   padding-top: 1.25rem;
-  border-top: var(--rule);
+  border-top: var(--rule-section);
 }
 
 .phase {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0.5rem 0 0.375rem;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0.5rem;
 }
 
 .name {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
   color: var(--star);
-  font-size: 1rem;
 }
 
 .pct {

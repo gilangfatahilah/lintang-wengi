@@ -86,6 +86,7 @@ export const en = {
 
   score: {
     outOf: '/5',
+    ratingAria: '{rating} out of 5',
     rating: {
       5: 'Excellent',
       4: 'Good',

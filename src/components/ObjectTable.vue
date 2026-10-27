@@ -38,7 +38,7 @@ function magnitude(entry: VisibleObject): string {
 <template>
   <div class="objects">
     <section v-for="group in groups" :key="group.category">
-      <h3 class="eyebrow">
+      <h3 class="label-quiet">
         <Icon :name="CATEGORY_ICONS[group.category]" />
         {{ t(group.labelKey) }}
       </h3>
