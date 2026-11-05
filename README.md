@@ -48,9 +48,7 @@ The app deploys as a Cloudflare Worker with static assets, not as Cloudflare Pag
 
 ## Data notes
 
-**Light pollution is currently placeholder data**, synthesised from city positions — the values are plausible but not measured, and the UI says so. Mid-sized cities tend to read too bright in this stub.
-
-To use real data (World Atlas 2015, Falchi et al.):
+**Light pollution comes from the World Atlas 2015** (Falchi et al., [doi:10.5880/GFZ.1.4.2016.001](https://doi.org/10.5880/GFZ.1.4.2016.001), [doi:10.1126/sciadv.1600377](https://doi.org/10.1126/sciadv.1600377)). The built grid is gitignored, so a fresh clone runs on placeholder data from `pnpm data:lp` — plausible, not measured, and the UI says so — until you build the real one:
 
 ```bash
 # Download World_Atlas_2015.zip (684 MB) from https://doi.org/10.5880/GFZ.1.4.2016.001
@@ -58,7 +56,7 @@ To use real data (World Atlas 2015, Falchi et al.):
 cd scripts/raw && unzip World_Atlas_2015.zip && cd ../..
 
 pip install rasterio    # the wheels bundle GDAL; no system GDAL needed
-python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015.tif
+python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015/World_Atlas_2015.tif
 pnpm test               # the calibration suite activates automatically once real data is in place
 ```
 

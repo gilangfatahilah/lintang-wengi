@@ -25,7 +25,7 @@ replacement -- no application code changes.
 
 Usage:
   python3 scripts/build_lp_grid.py --stub
-  python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015.tif
+  python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015/World_Atlas_2015.tif
 """
 
 from __future__ import annotations
@@ -198,7 +198,8 @@ def render_overlay(mag: np.ndarray) -> Image.Image:
 
 
 def bortle_summary(mag: np.ndarray) -> str:
-    thresholds = [(21.99, 1), (21.89, 2), (21.69, 3), (20.49, 4),
+    # Mirrors BORTLE_THRESHOLDS in src/lib/lightPollution.ts.
+    thresholds = [(21.97, 1), (21.89, 2), (21.69, 3), (20.49, 4),
                   (19.50, 5), (18.94, 6), (18.38, 7), (17.80, 8)]
     counts = {}
     remaining = np.ones(mag.shape, dtype=bool)

@@ -70,7 +70,11 @@ The home-screen icons in `public/icon-*.png` are `logo-mark.png` in cotton on `-
 
 ## Light pollution data
 
-Currently **stub data** — synthesised from city positions by `scripts/build_lp_grid.py --stub`. Values are plausible, not measured, and the UI says so. Known stub artifacts: its glow falloff has too long a tail (open ocean 340 km south of Java reads Bortle 3 instead of 1) and mid-sized cities saturate (Yogyakarta reads Bortle 9 instead of ~6–7). Do not tune these — the fix is real data.
+The real source is the 2015 World Atlas (Falchi et al.), built locally from the raster below; the artifacts are gitignored, so a fresh clone has only the **stub** from `pnpm data:lp` (synthesised from city positions, and the UI says so) until it is built. Do not tune the stub — its glow tail is too long and mid-sized cities saturate, and the fix is real data.
+
+Calibrated against the atlas in November 2026: Jakarta Pusat B8, Surabaya B7, Yogyakarta and Denpasar B5, Bosscha B5, Bromo and Dieng B3, open sea and Papua interior B1. One correction came out of it: class 1 starts at 21.97, because the natural sky the build adds is 21.98 and the usual 21.99 boundary was reachable only through uint8 rounding.
+
+**The atlas's licence prohibits redistribution and commercial use** (`README.txt` inside the zip). The grid is derived and downsampled, but deploying it publicly is still the licence holder's call — ask Fabio Falchi before shipping it, and cite both DOIs it requires.
 
 **Link the dataset by its DOI, never by a file URL.** The direct download host moved from `datapub.gfz-potsdam.de` to `datapub.gfz.de` and in October 2026 neither answered at all, while the DOI kept resolving. A file URL in these docs goes stale silently; the DOI is the one address GFZ has committed to.
 
@@ -81,7 +85,7 @@ Both stub and real paths emit the same contract (`lp-grid.bin` uint8 + `lp-meta.
 # radiance in mcd/m^2 on a 30 arcsec grid. Download World_Atlas_2015.zip from
 # https://doi.org/10.5880/GFZ.1.4.2016.001 into scripts/raw/ and unzip it there.
 pip install rasterio    # wheels bundle GDAL; no system GDAL needed
-python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015.tif
+python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015/World_Atlas_2015.tif
 pnpm test               # calibration suite activates automatically
 ```
 

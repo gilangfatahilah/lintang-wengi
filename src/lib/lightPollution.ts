@@ -36,12 +36,16 @@ export function isStubGrid(meta: LpMeta): boolean {
  * Bortle class boundaries in mag/arcsec^2 (higher is darker). Values at or above a
  * threshold take that class.
  *
- * These constants are the one place sky-brightness calibration lives. While the grid
- * is stub data they are unverified against reality; when a real raster is swapped in,
- * check a site of known Bortle class and correct here rather than anywhere else.
+ * These constants are the one place sky-brightness calibration lives. Checked against
+ * the 2015 World Atlas (Falchi et al.); correct here rather than anywhere else.
+ *
+ * Class 1 starts at 21.97, not the 21.99 of the usual SQM table: the natural sky the
+ * build adds is 21.98, so 21.99 is darker than any real sky and class 1 was only
+ * reached through uint8 rounding. 21.97 is artificial light at 1% of natural, the
+ * atlas's own definition of pristine.
  */
 const BORTLE_THRESHOLDS: ReadonlyArray<readonly [number, number]> = [
-  [21.99, 1],
+  [21.97, 1],
   [21.89, 2],
   [21.69, 3],
   [20.49, 4],

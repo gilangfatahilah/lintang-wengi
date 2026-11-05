@@ -65,6 +65,11 @@ describe('magnitudeToBortle', () => {
     expect(magnitudeToBortle(17.0)).toBe(9)
   })
 
+  it('reads the natural sky with no artificial light as class 1', () => {
+    // 0.174 mcd/m^2, the background build_lp_grid.py adds to the atlas.
+    expect(magnitudeToBortle(21.98)).toBe(1)
+  })
+
   it('increases monotonically as the sky gets brighter', () => {
     const samples = [22.0, 21.9, 21.8, 21.0, 20.0, 19.2, 18.6, 18.0, 17.0]
     const classes = samples.map(magnitudeToBortle)

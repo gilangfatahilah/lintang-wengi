@@ -18,7 +18,7 @@ import { sampleMagnitude, magnitudeToBortle, type LpGrid, type LpMeta } from './
  *      into scripts/raw/ and unzip it there (684 MB zipped, ~2.9 GB extracted; Falchi et al. 2016, artificial zenith
  *      radiance in mcd/m^2 on a 30 arcsec grid)
  *   2. pip install rasterio
- *   3. python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015.tif
+ *   3. python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015/World_Atlas_2015.tif
  *   4. pnpm test
  *
  * If a case fails, correct BORTLE_THRESHOLDS in lightPollution.ts -- that table is
