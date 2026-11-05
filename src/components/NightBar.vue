@@ -324,7 +324,7 @@ svg {
 }
 
 .edge {
-  stroke: var(--azure-dim);
+  stroke: color-mix(in srgb, var(--star) 38%, transparent);
   stroke-width: 1;
   stroke-dasharray: 3 3;
 }
@@ -360,7 +360,7 @@ svg {
 }
 
 .core-track {
-  stroke: var(--azure);
+  stroke: var(--star);
   stroke-width: 4;
   opacity: 0.85;
 }
@@ -416,7 +416,7 @@ svg {
 }
 
 .core-swatch {
-  background: var(--azure);
+  background: var(--star);
   height: 0.1875rem;
   border-radius: 2px;
 }

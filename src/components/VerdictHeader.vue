@@ -8,7 +8,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import type { Score } from '@/types'
-import { ratingText, limitingFactorText } from '@/lib/scoring'
+import { ratingText, ratingTone, limitingFactorText } from '@/lib/scoring'
 import { FACTOR_ICONS } from '@/lib/icons'
 import { formatAtOffset, timezoneLabel } from '@/lib/time'
 import { useI18n } from '@/composables/useI18n'
@@ -41,6 +41,8 @@ const bestRange = computed(() => {
  * not set it off -- the pin's own drop already acknowledges that.
  */
 const settling = ref(false)
+
+const tone = computed(() => ratingTone(props.score))
 watch(
   () => props.score.complete,
   (isComplete, was) => {
@@ -53,7 +55,7 @@ watch(
   <section class="verdict" :class="{ settling }" @animationend="settling = false">
     <!-- The figure first, large, for a glance at arm's length; the stars beneath it
          are the same number as a picture, and the app's namesake. -->
-    <div class="rating" role="img" :aria-label="t('score.ratingAria', { rating: score.rating })">
+    <div class="rating" :class="tone" role="img" :aria-label="t('score.ratingAria', { rating: score.rating })">
       <p class="numeric value" aria-hidden="true">
         {{ score.rating }}<span class="of">/5</span>
       </p>
@@ -62,7 +64,7 @@ watch(
           v-for="n in 5"
           :key="n"
           name="star"
-          :size="0.8"
+          :size="1"
           class="star"
           :class="{ lit: n <= score.rating }"
         />
@@ -145,6 +147,18 @@ watch(
 
 .star.lit {
   opacity: 1;
+}
+
+/* The figure carries the palette's meanings, which are otherwise spent only on the
+   small print below it. The unlit stars follow too, faintly, so the row reads as one. */
+.rating.good .value,
+.rating.good .star {
+  color: var(--clear);
+}
+
+.rating.warn .value,
+.rating.warn .star {
+  color: var(--ember);
 }
 
 .verdict-text {

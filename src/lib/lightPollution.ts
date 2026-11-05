@@ -13,6 +13,17 @@ export interface LpMeta {
   /** Byte 255 decodes to this magnitude. */
   magMax: number
   source?: string
+  /**
+   * The map overlay's colour ramp, darkest sky first, exactly as the build script
+   * painted `lp-overlay.png`. Alpha is 0..1. Absent from artifacts built before the
+   * legend existed, which then simply show no legend.
+   */
+  overlayStops?: OverlayStop[]
+}
+
+export interface OverlayStop {
+  mag: number
+  rgba: [number, number, number, number]
 }
 
 export interface LpGrid {
@@ -135,4 +146,26 @@ export function loadGrid(base = '/data'): Promise<LpGrid> {
       throw err
     })
   return cached
+}
+
+/**
+ * The overlay ramp as a CSS gradient for the map legend, dark sky on the left.
+ *
+ * Stops are placed by magnitude, not spaced evenly, so the legend is the same
+ * function of sky brightness the PNG is -- an evenly spaced strip would give the
+ * faint dark end as much room as the city core and misstate where the colour changes.
+ */
+export function overlayGradient(stops: OverlayStop[]): string | null {
+  const first = stops[0]
+  const last = stops[stops.length - 1]
+  if (!first || !last || stops.length < 2) return null
+  const dark = first.mag
+  const bright = last.mag
+  const span = dark - bright
+  if (span <= 0) return null
+  const parts = stops.map(({ mag, rgba: [r, g, b, a] }) => {
+    const at = Math.round(((dark - mag) / span) * 1000) / 10
+    return `rgb(${r} ${g} ${b} / ${a}) ${at}%`
+  })
+  return `linear-gradient(to right, ${parts.join(', ')})`
 }

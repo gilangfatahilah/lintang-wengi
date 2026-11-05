@@ -25,8 +25,8 @@ export default defineConfig({
         lang: 'id',
         display: 'standalone',
         // --void, matching index.html, so launch does not flash a lighter colour.
-        background_color: '#0e0909',
-        theme_color: '#0e0909',
+        background_color: '#060812',
+        theme_color: '#060812',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },

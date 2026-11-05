@@ -7,15 +7,19 @@
  * functional conclusion and drops the interface to red monochrome, the way an
  * observatory torch does.
  *
- * Colour carries three meanings and only three. Blue is identity and interaction,
- * green is "good", turmeric is "this is what is holding you back". Each token below
- * says which one it is, because a token that means two things -- as --ember once did,
- * being both "accent" and "warning" -- cannot be changed without changing both.
+ * Colour carries three meanings and only three. White is interaction, green is
+ * "good", turmeric is "this is what is holding you back". Each token below says which
+ * one it is, because a token that means two things -- as --ember once did, being both
+ * "accent" and "warning" -- cannot be changed without changing both.
  *
- * The palette is "Tenun Kombu", the dyes of a Sumba ikat: surfaces are the red-brown
- * of kombu root taken down to almost nothing, interaction is the indigo (nila) the
- * same cloth is woven with -- which is also the logo's hue -- and the warning is
- * turmeric yellow. Text is undyed cotton.
+ * The look is a planetarium dome with the house lights down. Surfaces are the logo's
+ * own navy (--brand) taken down to almost nothing, so identity is carried by the room
+ * rather than by an accent. Text is the cool white of projected starlight, and
+ * interaction is plain white, one step brighter: the dome has no coloured accent, so
+ * the only hues on screen are the ones that mean something (green, turmeric) and the
+ * light pollution on the map. Because white is so close to the text colour, an
+ * interactive state is never carried by colour alone -- the active tab is a raised
+ * fill, the selected result has a bar, focus has a ring.
  *
  * Type: one family, Plus Jakarta Sans (Tokotype, Jakarta), with hierarchy carried by
  * size and weight rather than by a second face. Self-hosted from @fontsource-variable
@@ -23,40 +27,39 @@
  * a font that is missing on a ridge with no signal. Its tabular figures line up down a
  * column, so nothing here needs a monospace face.
  *
- * Ornament is one motif only: kawung, four petals around a point, used as the section
- * divider and as a faint texture on the empty panel. It is drawn as a CSS mask filled
- * with currentColor, so field mode recolours it with everything else.
+ * Ornament is the dome itself, and only that: the section divider is the curve of its
+ * horizon, and the empty panel carries a faint, irregular field of stars. Both are
+ * filled from --star, so field mode recolours them with everything else.
  */
 
 :root {
-  /* Kombu: the ikat's red-brown, taken down to near-black. Never neutral black. */
-  --void: #0e0909;
-  --panel: #160e0d;
-  --panel-raised: #241816;
+  /* The dome: --brand taken down to near-black. Never neutral black. */
+  --void: #060812;
+  --panel: #0a0e1c;
+  --panel-raised: #151b2f;
 
-  /*
-   * Identity and interaction. --brand is the logo navy exactly as drawn; at 1.6:1
-   * against --panel it can only ever be a surface, never text, so the accent is the
-   * same hue lifted -- the nila of the cloth. Keeping both means the brand colour
-   * still appears literally somewhere rather than only as an approximation of itself.
-   */
+  /* The logo navy exactly as drawn. At 1.6:1 against --panel it can only ever be a
+     surface, never text. */
   --brand: #193667;
-  --azure: #93a6e2;
-  --azure-dim: #33406e;
+
+  /* Interaction, and nothing else: active tab, selected row, focus ring, the map
+     marker. Plain white, 19:1 against --panel; --accent-dim is a surface only. */
+  --accent: #ffffff;
+  --accent-dim: #3a4360;
 
   /* Warning, and nothing else: errors, the limiting factor, an incomplete score.
-     Turmeric, the ikat's yellow. */
+     Turmeric. */
   --ember: #e8b44a;
   --ember-dim: #5c4316;
 
-  /* Undyed cotton, and the cotton in shadow. --haze is 7:1 against --panel. */
-  --star: #f2e4cf;
-  --haze: #b4a596;
+  /* Projected starlight, and starlight dimmed. --haze is 8.5:1 against --panel. */
+  --star: #e4e9f7;
+  --haze: #a3acc6;
 
   /* "Good": clear sky, a dark night, an object worth pointing at. */
   --clear: #8fd0a0;
   /* Fill of the dark-window band in the night bar. */
-  --night-band: #070404;
+  --night-band: #03040a;
 
   --font-display: 'Plus Jakarta Sans Variable', 'Segoe UI', system-ui, sans-serif;
   --font-body: 'Plus Jakarta Sans Variable', 'Segoe UI', system-ui, sans-serif;
@@ -66,9 +69,11 @@
   --radius: 0.75rem;
   --panel-width: 25rem;
 
-  /* The kawung unit, as a mask. White only because a mask reads alpha; the colour
-     comes from whatever `background` the masked element sets. */
-  --kawung: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='white'%3E%3Cellipse cx='12' cy='6' rx='3.2' ry='5'/%3E%3Cellipse cx='12' cy='18' rx='3.2' ry='5'/%3E%3Cellipse cx='6' cy='12' rx='5' ry='3.2'/%3E%3Cellipse cx='18' cy='12' rx='5' ry='3.2'/%3E%3C/g%3E%3C/svg%3E");
+  /* A tile of stars for the empty panel, as a mask. White only because a mask reads
+     alpha; the colour comes from whatever `background` the masked element sets.
+     Placed by hand and unevenly, in three sizes: a regular dot grid reads as graph
+     paper, not as sky. */
+  --starfield: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Cg fill='white'%3E%3Ccircle cx='9' cy='13' r='1.1'/%3E%3Ccircle cx='31' cy='6' r='0.6'/%3E%3Ccircle cx='52' cy='21' r='1.6'/%3E%3Ccircle cx='77' cy='9' r='0.7'/%3E%3Ccircle cx='88' cy='37' r='1'/%3E%3Ccircle cx='18' cy='44' r='0.6'/%3E%3Ccircle cx='41' cy='52' r='0.9'/%3E%3Ccircle cx='66' cy='47' r='0.6'/%3E%3Ccircle cx='6' cy='74' r='1.5'/%3E%3Ccircle cx='29' cy='83' r='0.7'/%3E%3Ccircle cx='57' cy='79' r='1.1'/%3E%3Ccircle cx='81' cy='68' r='0.6'/%3E%3Ccircle cx='72' cy='91' r='0.8'/%3E%3C/g%3E%3C/svg%3E");
 
   color-scheme: dark;
 }
@@ -88,8 +93,8 @@
   --ember: #ff8a5c;
   --ember-dim: #6a2414;
   --brand: #1a0708;
-  --azure: #ff6a45;
-  --azure-dim: #9e3a24;
+  --accent: #ff6a45;
+  --accent-dim: #9e3a24;
   --panel: #0a0405;
   --panel-raised: #140708;
   --void: #050203;
@@ -100,8 +105,13 @@
  * The map is the largest lit surface on screen, so recolouring only the panel would
  * defeat the purpose. Filtering the whole canvas to red keeps the light pollution
  * overlay legible as relative brightness while removing the short wavelengths.
+ *
+ * The overlay's legend is painted from the same literal stops and sits outside the
+ * canvas, so it takes the same filter -- otherwise it would be the one orange thing
+ * left on a red screen, and would no longer match the map it explains.
  */
-:root[data-field='true'] .maplibregl-map {
+:root[data-field='true'] .maplibregl-map,
+:root[data-field='true'] .map-legend-ramp {
   filter: grayscale(1) brightness(0.62) sepia(1) hue-rotate(-28deg) saturate(4.5);
 }
 
@@ -137,7 +147,7 @@ input {
 }
 
 :focus-visible {
-  outline: 2px solid var(--azure);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -161,7 +171,7 @@ input {
 
 .maplibregl-ctrl-attrib-button:focus-visible,
 .maplibregl-ctrl-group button:focus-visible {
-  outline: 2px solid var(--azure);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -177,17 +187,18 @@ input {
 }
 
 /*
- * The section divider: a row of kawung, faint. Decorative, so the element carrying it
- * is aria-hidden; the structure it marks is already in the headings.
+ * The section divider: the dome's horizon, a shallow arc. A top border on a box whose
+ * corners are fully rounded vertically curves down at both ends and thins to nothing
+ * there, so it tapers without a mask. Decorative, so the element carrying it is
+ * aria-hidden; the structure it marks is already in the headings.
  */
-.kawung-rule {
-  height: 0.625rem;
+.horizon-rule {
+  height: 0.75rem;
   margin: 0;
   border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--star) 24%, transparent);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
   flex: none;
-  background: color-mix(in srgb, var(--star) 16%, transparent);
-  -webkit-mask: var(--kawung) left center / 0.625rem 0.625rem space no-repeat;
-  mask: var(--kawung) left center / 0.625rem 0.625rem space no-repeat;
 }
 
 .numeric {

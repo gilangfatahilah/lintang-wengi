@@ -38,6 +38,8 @@ const core = computed(() =>
 )
 
 /** Read off the score itself, so the row and the rating cannot disagree. */
+const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lon.toFixed(4)}°`)
+
 const cloudCover = computed(() => props.score?.stretch?.cloudCover ?? null)
 
 /** 0-1 per factor, for the meters; null where the factor did not enter the score. */
@@ -146,15 +148,20 @@ const moonTimes = computed(() => {
         </span>
       </div>
 
-      <div v-if="forecast" class="row plain">
+      <!-- Always rendered: before the forecast lands, or if it fails, this is the
+           only place the picked coordinates are shown. -->
+      <div class="row plain">
         <span class="badge"><Icon name="pin" :size="1.25" /></span>
         <div class="text">
-          <dt class="label-quiet">{{ t('weather.forecastPoint') }}</dt>
+          <dt class="label-quiet">
+            {{ forecast ? t('weather.forecastPoint') : t('panel.pickedPoint') }}
+          </dt>
           <dd>
-            <span class="numeric strong">{{ forecast.location.desa }}</span>
-            <span v-if="distanceKm !== null" class="detail numeric">
+            <span v-if="forecast" class="numeric strong">{{ forecast.location.desa }}</span>
+            <span v-if="forecast && distanceKm !== null" class="detail numeric">
               {{ t('weather.distanceAway', { km: distanceKm.toFixed(1) }) }}
             </span>
+            <span :class="forecast ? 'detail numeric' : 'numeric strong'">{{ coords }}</span>
           </dd>
         </div>
       </div>

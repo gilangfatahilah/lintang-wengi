@@ -32,6 +32,8 @@ export const id: Messages = {
     lightPollution: 'Polusi cahaya',
     shown: 'tampil',
     hidden: 'sembunyi',
+    legendDark: 'Langit gelap',
+    legendBright: 'Terang kota',
     zoomIn: 'Perbesar',
     zoomOut: 'Perkecil',
   },
@@ -79,6 +81,7 @@ export const id: Messages = {
   panel: {
     tabsLabel: 'Informasi lokasi',
     resolving: 'Menentukan wilayah…',
+    pickedPoint: 'Titik yang dipilih',
     tabs: { score: 'Skor', sky: 'Langit', weather: 'Cuaca' },
     attributionWeather: 'Data cuaca:',
     attributionAgency: '— Badan Meteorologi, Klimatologi, dan Geofisika',

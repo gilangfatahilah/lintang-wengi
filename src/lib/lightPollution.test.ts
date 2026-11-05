@@ -3,6 +3,7 @@ import {
   sampleMagnitude,
   magnitudeToBortle,
   bortleText,
+  overlayGradient,
   type LpGrid,
   type LpMeta,
 } from './lightPollution'
@@ -88,5 +89,30 @@ describe('bortleText', () => {
   it('returns a message key per class rather than a sentence', () => {
     expect(bortleText(1).key).toBe('bortle.1')
     expect(bortleText(9).key).toBe('bortle.9')
+  })
+})
+
+describe('overlayGradient', () => {
+  it('places stops by magnitude, dark sky first', () => {
+    expect(
+      overlayGradient([
+        { mag: 22, rgba: [0, 0, 0, 0] },
+        { mag: 21, rgba: [92, 34, 28, 0.275] },
+        { mag: 17, rgba: [255, 246, 232, 0.941] },
+      ]),
+    ).toBe(
+      'linear-gradient(to right, rgb(0 0 0 / 0) 0%, rgb(92 34 28 / 0.275) 20%, rgb(255 246 232 / 0.941) 100%)',
+    )
+  })
+
+  it('returns null when there is no ramp to draw', () => {
+    expect(overlayGradient([])).toBeNull()
+    expect(overlayGradient([{ mag: 22, rgba: [0, 0, 0, 0] }])).toBeNull()
+    expect(
+      overlayGradient([
+        { mag: 20, rgba: [0, 0, 0, 0] },
+        { mag: 20, rgba: [1, 1, 1, 1] },
+      ]),
+    ).toBeNull()
   })
 })

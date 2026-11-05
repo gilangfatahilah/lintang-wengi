@@ -161,12 +161,13 @@ export const ICONS: Record<IconName, string> = {
     '<path d="M4.5 16.5c1.6-5.4 4.2-8.1 7.5-8.1s5.9 2.7 7.5 8.1z"/>' +
     `<g ${S} stroke-width="1.9"><path d="M2 19.8c2-1.5 3.7-1.5 5.7 0s3.7 1.5 5.7 0 3.7-1.5 5.7 0"/></g>`,
 
-  plateau: '<path d="M1.5 20.5v-4.2h4.2V12.5h12.6v3.8h4.2v4.2z"/>',
+  // A mesa: flat top, sloped flanks. Stepped blocks read as a brick at 14px.
+  plateau: '<path d="M1.5 20.5 6.4 10.2c.2-.4.6-.7 1.1-.7h9c.5 0 .9.3 1.1.7l4.9 10.3z"/>',
 
   cape:
-    '<path d="M1.5 4.5h7.8v5.2c0 4.4-2.7 7.6-7.8 9.6z"/>' +
-    `<g ${S} stroke-width="1.8"><path d="M13 11.5c1.5-1.2 2.7-1.2 4.2 0s2.7 1.2 4.2 0` +
-    'M13 16c1.5-1.2 2.7-1.2 4.2 0s2.7 1.2 4.2 0M13 20.5c1.5-1.2 2.7-1.2 4.2 0s2.7 1.2 4.2 0"/></g>',
+    '<path d="M1.5 3.5h8.2c1.4 0 2.3 1.4 1.8 2.7L8.6 13c-.8 1.9-2.4 3.4-4.4 4.2L1.5 18.4z"/>' +
+    `<g ${S} stroke-width="1.9"><path d="M12.5 15c1.5-1.2 2.7-1.2 4.2 0s2.7 1.2 4.2 0` +
+    'M7 20.5c1.5-1.2 2.7-1.2 4.2 0s2.7 1.2 4.2 0 2.7 1.2 4.2 0"/></g>',
 
   park:
     '<path d="M12 2 5.8 12.5h3.4L4.2 20.5h15.6L14.8 12.5h3.4z"/>' +
@@ -180,10 +181,12 @@ export const ICONS: Record<IconName, string> = {
     '<path d="m15.8 5.6 6.2-2.6v15.4L15.8 21z"/>',
 
   // Light pollution: a dome of glow standing on the horizon, not a lamp.
+  // Light pollution: a skyline under the dome of light it throws up. The old half-sun
+  // on a horizon read as a sunrise, which is the one thing this factor is not.
   glow:
-    '<path d="M12 7.5c3.9 0 7 3.9 7 8.7H5c0-4.8 3.1-8.7 7-8.7z"/>' +
-    `<g ${S} stroke-width="1.9"><path d="M2 20.2h20"/></g>` +
-    `<g ${S} stroke-width="1.6" opacity="0.75"><path d="M12 1.6v2.8M4.6 4.2l1.9 2.2M19.4 4.2l-1.9 2.2"/></g>`,
+    '<path d="M1.5 21.5v-5.3h3.2v-2.9h3.1v3.6h1.6V11h4.9v4h1.9v-2.4h3.4v3.6h2.9v5.3z"/>' +
+    `<g ${S} stroke-width="1.8"><path d="M3.6 9.2c4.4-4.6 12.4-4.6 16.8 0" opacity="0.8"/>` +
+    '<path d="M7.2 4.6c3-1.9 6.6-1.9 9.6 0" opacity="0.45"/></g>',
 
   /*
    * The map marker. The point it names is the tip, not the centre, so whatever
@@ -206,9 +209,9 @@ export const ICONS: Record<IconName, string> = {
   // small sizes and left only the core dot.
   galaxy:
     '<g transform="rotate(-25 12 12)">' +
-    '<ellipse cx="12" cy="12" rx="11" ry="3.9" opacity="0.4"/>' +
-    '<ellipse cx="12" cy="12" rx="7.2" ry="2.9" opacity="0.7"/>' +
-    '<circle cx="12" cy="12" r="3.3"/></g>',
+    '<ellipse cx="12" cy="12" rx="11.2" ry="3.4" opacity="0.55"/>' +
+    '<ellipse cx="12" cy="12" rx="7.6" ry="2.6" opacity="0.85"/>' +
+    '<ellipse cx="12" cy="12" rx="4.4" ry="3.9"/></g>',
 
   planet:
     '<circle cx="12" cy="11.5" r="5.6"/>' +
@@ -216,10 +219,14 @@ export const ICONS: Record<IconName, string> = {
 
   star: '<path d="m12 2.2 3 6.4 7 1-5.1 4.9 1.3 6.9L12 18.1l-6.2 3.3 1.3-6.9L2 9.6l7-1z"/>',
 
+  // Full mass with an irregular edge rather than two translucent ellipses, which at
+  // 14px averaged into a grey smudge. The cut-out star keeps it from reading as cloud,
+  // and the round outline with no flat base keeps it from reading as weather.
   nebula:
-    '<ellipse cx="11.5" cy="12.8" rx="7.8" ry="6.2" opacity="0.45"/>' +
-    '<ellipse cx="13" cy="11.2" rx="4.6" ry="3.7" opacity="0.8"/>' +
-    '<circle cx="4.6" cy="5" r="1.2"/><circle cx="19.6" cy="5.8" r="0.95"/><circle cx="19.2" cy="19" r="1.05"/>',
+    '<path fill-rule="evenodd" d="M7.4 18.6c-3.3-.6-5-3.4-4.3-6.3.6-2.4 2.6-3.6 4.6-3.6.8-2.6 3.3-4.2 6-3.8 ' +
+    '3.3.5 5.4 3.2 5.1 6.3 2.2.9 3.2 3.2 2.5 5.3-.8 2.6-3.6 3.6-6 2.8-2.2 1.2-5.2.6-7.9-.7z' +
+    'm5.5-8.6-.9 1.9-2 .3 1.5 1.4-.4 2 1.8-1 1.8 1-.4-2 1.5-1.4-2-.3z"/>' +
+    '<circle cx="3.4" cy="4.2" r="1.1"/><circle cx="20.4" cy="3.6" r="0.9"/>',
 
   gauge:
     `<g ${S} stroke-width="2.6"><path d="M3.4 18.5a8.6 8.6 0 1 1 17.2 0"/></g>` +
@@ -237,9 +244,11 @@ export const ICONS: Record<IconName, string> = {
     '<path d="m3.4 12.4 8.6 4.5 8.6-4.5 1.2.6-9.8 5.1-9.8-5.1z" opacity="0.6"/>' +
     '<path d="m3.4 16.9 8.6 4.5 8.6-4.5 1.2.6-9.8 5.1-9.8-5.1z" opacity="0.35"/>',
 
+  // A torch casting light, not a bare cylinder: the beam is what says "switch the
+  // screen to red light", and the old outline vanished below 16px.
   torch:
-    '<path d="M8.4 2.2h7.2v4.6H8.4z"/>' +
-    '<path d="M7.2 8.2h9.6L14 21.8h-4z" opacity="0.55"/>',
+    '<path d="M6.8 9.4h10.4l-2.4 4.4v6.9c0 .7-.6 1.3-1.3 1.3h-3c-.7 0-1.3-.6-1.3-1.3v-6.9z"/>' +
+    `<g ${S} stroke-width="1.8" opacity="0.75"><path d="M12 2.2v3.6M5.6 3.8l1.8 2.6M18.4 3.8l-1.8 2.6"/></g>`,
 
   /*
    * The panel controls read as what happens to the panel, not as generic window

@@ -26,6 +26,8 @@ export const en = {
     lightPollution: 'Light pollution',
     shown: 'shown',
     hidden: 'hidden',
+    legendDark: 'Dark sky',
+    legendBright: 'City glow',
     zoomIn: 'Zoom in',
     zoomOut: 'Zoom out',
   },
@@ -73,6 +75,7 @@ export const en = {
   panel: {
     tabsLabel: 'Location information',
     resolving: 'Finding the district…',
+    pickedPoint: 'Picked point',
     tabs: { score: 'Score', sky: 'Sky', weather: 'Weather' },
     attributionWeather: 'Weather data:',
     attributionAgency: '— Meteorology, Climatology and Geophysical Agency of Indonesia',

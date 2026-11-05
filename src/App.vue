@@ -329,15 +329,16 @@ watch(fieldMode, (on) => {
  * The logo ships as a single-colour navy silhouette on transparency. Drawn as an
  * image its own #193667 would sit at 1.6:1 against --panel and be near-invisible,
  * and it would stay blue in field mode. So it is used as a mask and filled from the
- * palette: --azure is that same navy lifted to a readable value, and it turns red
- * the moment "Mode lapangan" remaps the token. One asset, correct in both modes.
+ * palette: starlight on the dome, the same pairing as the home-screen icons (white
+ * mark on --brand). Not --accent: the logo is identity, and the navy surfaces already
+ * carry that; --accent means "you can act on this". One asset, correct in both modes.
  */
 .logo {
   flex: none;
   margin: 0;
   height: 1.5rem;
   aspect-ratio: 1735 / 801;
-  background-color: var(--azure);
+  background-color: var(--star);
   -webkit-mask: url("/logo-mark.png") center / contain no-repeat;
   mask: url("/logo-mark.png") center / contain no-repeat;
 }
@@ -387,7 +388,7 @@ watch(fieldMode, (on) => {
 /* A mode indicator, not a warning: this is the state the app is meant to be used in. */
 .field-toggle[aria-pressed="true"] {
   background: var(--panel-raised);
-  color: var(--azure);
+  color: var(--accent);
 }
 
 .load-error {
@@ -489,16 +490,17 @@ watch(fieldMode, (on) => {
   overflow-y: auto;
 }
 
-/* Kawung, very faint, so the waiting panel has a surface rather than a void. A mask
-   filled from --star, so field mode reaches it like any text. */
+/* A faint field of stars, so the waiting panel reads as the dome before the show
+   rather than as a void. A mask filled from --star, so field mode reaches it like
+   any text. */
 .empty::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: color-mix(in srgb, var(--star) 4%, transparent);
-  -webkit-mask: var(--kawung) 0 0 / 2.75rem 2.75rem repeat;
-  mask: var(--kawung) 0 0 / 2.75rem 2.75rem repeat;
+  background: color-mix(in srgb, var(--star) 22%, transparent);
+  -webkit-mask: var(--starfield) 0 0 / 6rem 6rem repeat;
+  mask: var(--starfield) 0 0 / 6rem 6rem repeat;
 }
 
 .empty > * {
@@ -532,7 +534,7 @@ watch(fieldMode, (on) => {
 }
 
 .rail-restore:hover {
-  color: var(--azure);
+  color: var(--accent);
 }
 
 /* Stacked, the panel reopens upward, so the arrow has to say so. */

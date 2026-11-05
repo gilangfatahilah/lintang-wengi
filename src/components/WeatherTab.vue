@@ -166,8 +166,8 @@ tr.dark td {
   margin-right: 0.25rem;
   font-size: 0.5rem;
   vertical-align: 0.15em;
-  /* Emphasis, not alarm: these are the rows that decide the night. */
-  color: var(--azure);
+  /* Emphasis, not alarm: these are the rows that decide the night. Inherits the
+     row's starlight -- the accent would make a forecast row look selected. */
 }
 
 .cover {

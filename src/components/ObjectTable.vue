@@ -116,7 +116,7 @@ li {
 }
 
 .sep {
-  color: var(--azure-dim);
+  color: color-mix(in srgb, var(--haze) 55%, transparent);
 }
 
 .note {

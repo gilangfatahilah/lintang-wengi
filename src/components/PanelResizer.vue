@@ -126,7 +126,7 @@ function onKey(event: KeyboardEvent) {
 .resizer:hover .grip,
 .resizer:focus-visible .grip,
 .resizer.dragging .grip {
-  background: var(--azure);
+  background: var(--accent);
   opacity: 1;
 }
 
@@ -136,7 +136,7 @@ function onKey(event: KeyboardEvent) {
 }
 
 .resizer:focus-visible {
-  outline: 2px solid var(--azure);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 </style>

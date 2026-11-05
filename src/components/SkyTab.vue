@@ -184,18 +184,12 @@ function whenLabel(daysAway: number): string {
   margin-bottom: 0;
 }
 
+/* The verdict line carries the colour; a stripe down the edge said it a second time
+   and, by default, in the interaction blue. */
 .milkyway {
   padding: 0.875rem;
+  border-radius: var(--radius);
   background: var(--panel-raised);
-  border-left: 2px solid var(--azure-dim);
-}
-
-.milkyway[data-verdict='baik'] {
-  border-left-color: var(--clear);
-}
-
-.milkyway[data-verdict='terbatas'] {
-  border-left-color: var(--ember);
 }
 
 h3,
@@ -210,8 +204,12 @@ h4 {
   font-weight: 700;
 }
 
-.milkyway[data-verdict='baik'] .verdict {
+.milkyway[data-verdict='good'] .verdict {
   color: var(--clear);
+}
+
+.milkyway[data-verdict='limited'] .verdict {
+  color: var(--ember);
 }
 
 .reason {

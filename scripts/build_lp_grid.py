@@ -169,6 +169,29 @@ def quantise(mag: np.ndarray) -> np.ndarray:
     return np.clip(np.round(normalised * 255), 0, 255).astype(np.uint8)
 
 
+# The overlay's colour ramp, darkest sky first. Also written into lp-meta.json so the
+# map legend draws from these exact stops and cannot drift from the PNG.
+#
+# Sodium light: a dull red glow, then orange, then a near-white city core -- the
+# colour light pollution actually is over a dark sky, set against the app's navy. No
+# green -- in the panel that means "good", and a map that painted moderate light
+# pollution green contradicted the readout beside it -- and no plain
+# white below the city core, which is interaction. Luminance rises at every stop, so brighter on the map always means
+# brighter sky, and field mode's grayscale-to-red filter keeps the order instead of
+# scrambling it.
+OVERLAY_STOPS = [
+    # (mag/arcsec^2, R, G, B, A)
+    (22.00, 0, 0, 0, 0),           # pristine: invisible
+    (21.70, 92, 34, 28, 70),       # faint glow
+    (21.30, 132, 40, 32, 110),     # dull red
+    (20.50, 178, 62, 38, 150),     # red-orange
+    (19.50, 214, 112, 46, 180),    # sodium orange
+    (18.90, 232, 170, 72, 200),    # amber
+    (18.30, 242, 214, 150, 220),   # amber into white
+    (17.00, 255, 246, 232, 240),   # saturated core: near white
+]
+
+
 def render_overlay(mag: np.ndarray) -> Image.Image:
     """
     Colours the grid for display over a dark basemap.
@@ -176,17 +199,7 @@ def render_overlay(mag: np.ndarray) -> Image.Image:
     Pristine sky is left fully transparent so the map underneath shows through --
     on a stargazing map the interesting signal is where the light *is*.
     """
-    stops = [
-        # (mag/arcsec^2, R, G, B, A)
-        (22.00, 0, 0, 0, 0),        # pristine: invisible
-        (21.70, 20, 60, 130, 60),   # deep blue haze
-        (21.30, 30, 130, 120, 110), # teal
-        (20.50, 60, 170, 70, 150),  # green
-        (19.50, 220, 200, 60, 180), # yellow
-        (18.90, 240, 140, 40, 200), # orange
-        (18.30, 230, 70, 50, 220),  # red
-        (17.00, 255, 245, 235, 240),# saturated core
-    ]
+    stops = OVERLAY_STOPS
     knots = np.array([s[0] for s in stops][::-1])
     channels = np.array([[s[i] for s in stops][::-1] for i in range(1, 5)], dtype=np.float64)
 
@@ -246,6 +259,10 @@ def main() -> None:
         "magMax": MAG_MAX,
         "source": "stub" if args.stub else str(args.input),
         "note": "mag/arcsec^2 = magMin + (byte/255)*(magMax-magMin); row 0 is north",
+        "overlayStops": [
+            {"mag": m, "rgba": [r, g, b, round(a / 255, 3)]}
+            for m, r, g, b, a in OVERLAY_STOPS
+        ],
     }, indent=2) + "\n")
 
     print(f"\nWrote {OUT_DIR}")

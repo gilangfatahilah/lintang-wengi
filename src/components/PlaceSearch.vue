@@ -258,8 +258,8 @@ input::-webkit-search-cancel-button {
   display: block;
   width: 0.75rem;
   height: 0.75rem;
-  border: 1.5px solid var(--azure-dim);
-  border-top-color: var(--azure);
+  border: 1.5px solid var(--accent-dim);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -325,7 +325,7 @@ input::-webkit-search-cancel-button {
 }
 
 .results li.active .kind {
-  color: var(--azure);
+  color: var(--accent);
 }
 
 .results li + li {
@@ -334,7 +334,7 @@ input::-webkit-search-cancel-button {
 
 .results li.active {
   background: var(--brand);
-  box-shadow: inset 2px 0 0 var(--azure);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .results li.empty {

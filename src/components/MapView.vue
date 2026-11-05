@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import maplibregl, { type StyleSpecification } from 'maplibre-gl'
 import type { LatLng } from '@/types'
-import type { LpMeta } from '@/lib/lightPollution'
+import { overlayGradient, type LpMeta } from '@/lib/lightPollution'
 import { ICONS } from '@/lib/icons'
 import { useI18n } from '@/composables/useI18n'
 import Icon from './Icon.vue'
@@ -19,6 +19,10 @@ const container = ref<HTMLDivElement | null>(null)
 const map = shallowRef<maplibregl.Map | null>(null)
 const marker = shallowRef<maplibregl.Marker | null>(null)
 const overlayVisible = ref(true)
+/** Drawn from the same stops that painted the overlay PNG, so the two cannot disagree. */
+const legendRamp = computed(() =>
+  props.lpMeta?.overlayStops ? overlayGradient(props.lpMeta.overlayStops) : null,
+)
 let resizeObserver: ResizeObserver | null = null
 
 /**
@@ -29,20 +33,39 @@ let resizeObserver: ResizeObserver | null = null
  * Every tile needs `?key=`. Without one CARTO still answers 200, but with a grey
  * "API KEY REQUIRED" tile instead of the map — nothing errors, so check the
  * picture, not the status.
+ *
+ * CARTO's dark is a neutral grey, and the app is never neutral black: beside the
+ * navy panel it read as a second product. So the tiles are drawn slightly
+ * translucent over a background of --void, which pulls their greys toward the
+ * dome without a second tile set. The colour is read from the token at mount
+ * rather than written here twice; field mode needs nothing extra, because its
+ * filter on the whole canvas recolours this layer with the rest.
  */
-const style: StyleSpecification = {
-  version: 8,
-  sources: {
-    carto: {
-      type: 'raster',
-      tiles: [
-        `https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png?key=${import.meta.env.VITE_CARTO_API_KEY}`,
-      ],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors © CARTO',
+function buildStyle(): StyleSpecification {
+  const ground =
+    getComputedStyle(document.documentElement).getPropertyValue('--void').trim() || '#060812'
+  return {
+    version: 8,
+    sources: {
+      carto: {
+        type: 'raster',
+        tiles: [
+          `https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png?key=${import.meta.env.VITE_CARTO_API_KEY}`,
+        ],
+        tileSize: 256,
+        attribution: '© OpenStreetMap contributors © CARTO',
+      },
     },
-  },
-  layers: [{ id: 'basemap', type: 'raster', source: 'carto' }],
+    layers: [
+      { id: 'ground', type: 'background', paint: { 'background-color': ground } },
+      {
+        id: 'basemap',
+        type: 'raster',
+        source: 'carto',
+        paint: { 'raster-opacity': 0.88, 'raster-saturation': -1 },
+      },
+    ],
+  }
 }
 
 function addOverlay(m: maplibregl.Map, meta: LpMeta) {
@@ -70,7 +93,7 @@ onMounted(() => {
   if (!container.value) return
   const m = new maplibregl.Map({
     container: container.value,
-    style,
+    style: buildStyle(),
     center: [117, -2.2],
     zoom: 4,
     maxBounds: [
@@ -167,15 +190,25 @@ watch(overlayVisible, (visible) => {
 <template>
   <div class="map-wrap">
     <div ref="container" class="map" />
-    <button
-      class="overlay-toggle"
-      type="button"
-      :aria-pressed="overlayVisible"
-      @click="overlayVisible = !overlayVisible"
-    >
-      <Icon name="layers" />
-      {{ t('map.lightPollution') }}: {{ overlayVisible ? t('map.shown') : t('map.hidden') }}
-    </button>
+    <!-- The legend sits on the toggle it explains, and goes when the layer does. -->
+    <div class="overlay-box">
+      <div v-if="legendRamp && overlayVisible" class="legend">
+        <span class="map-legend-ramp" :style="{ backgroundImage: legendRamp }" aria-hidden="true" />
+        <span class="legend-ends">
+          <span>{{ t('map.legendDark') }}</span>
+          <span>{{ t('map.legendBright') }}</span>
+        </span>
+      </div>
+      <button
+        class="overlay-toggle"
+        type="button"
+        :aria-pressed="overlayVisible"
+        @click="overlayVisible = !overlayVisible"
+      >
+        <Icon name="layers" />
+        {{ t('map.lightPollution') }}: {{ overlayVisible ? t('map.shown') : t('map.hidden') }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -189,29 +222,56 @@ watch(overlayVisible, (visible) => {
   height: 100%;
 }
 
-.overlay-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
+.overlay-box {
   position: absolute;
   /* Below the search field, which owns the top-left corner. */
   bottom: 0.75rem;
   left: 0.75rem;
-  padding: 0.4375rem 0.6875rem;
+  display: flex;
+  flex-direction: column;
   background: color-mix(in srgb, var(--panel) 92%, transparent);
   border: var(--rule);
+}
+
+.legend {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.5rem 0.6875rem 0.25rem;
+}
+
+/* Over --void, the overlay's faint end reads here as it does over open sea. */
+.map-legend-ramp {
+  display: block;
+  height: 0.5rem;
+  border-radius: 0.25rem;
+  background-color: var(--void);
+}
+
+.legend-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--haze);
+}
+
+.overlay-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4375rem 0.6875rem;
   font-size: 0.8125rem;
   color: var(--star);
 }
 
 .overlay-toggle:hover {
-  border-color: var(--azure-dim);
+  color: var(--accent);
 }
 
 /* Narrow enough that MapLibre's attribution bar reaches across into the toggle, so
    the toggle steps up out of its row rather than being read through it. */
 @media (max-width: 32rem) {
-  .overlay-toggle {
+  .overlay-box {
     bottom: 2.25rem;
   }
 }
@@ -222,7 +282,7 @@ watch(overlayVisible, (visible) => {
 .spot-marker {
   width: 26px;
   height: 26px;
-  color: var(--azure);
+  color: var(--accent);
 }
 
 .spot-marker .pin {

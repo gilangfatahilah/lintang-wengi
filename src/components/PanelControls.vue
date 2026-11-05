@@ -64,7 +64,7 @@ button {
 
 button:hover,
 button[aria-pressed='true'] {
-  color: var(--azure);
+  color: var(--accent);
 }
 
 /*

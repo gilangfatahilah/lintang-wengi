@@ -252,6 +252,22 @@ export function ratingText(rating: number): I18nText {
   return { key: `score.rating.${Math.min(Math.max(Math.round(rating), 1), 5)}` }
 }
 
+export type RatingTone = 'good' | 'neutral' | 'warn'
+
+/**
+ * Which of the palette's meanings the rating figure carries: `--clear` for a night
+ * worth going out for, `--ember` for one that is not.
+ *
+ * Asymmetric on purpose when the score is incomplete. A missing forecast drops a
+ * term, so a provisional rating can only fall once cloud arrives: a provisional 2
+ * is already a warning and stays one, but a provisional 5 has not earned "good" yet.
+ */
+export function ratingTone(score: Pick<Score, 'rating' | 'complete'>): RatingTone {
+  if (score.rating <= 2) return 'warn'
+  if (score.rating >= 4 && score.complete) return 'good'
+  return 'neutral'
+}
+
 /** Why the rating is not higher. Null when nothing is holding it back. */
 export function limitingFactorText(score: Score): I18nText | null {
   if (!score.limitingFactor) return null

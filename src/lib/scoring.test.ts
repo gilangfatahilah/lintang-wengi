@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { computeScore, cloudCoverForNight, limitingFactorText, scoreNight } from './scoring'
+import {
+  computeScore,
+  cloudCoverForNight,
+  limitingFactorText,
+  ratingTone,
+  scoreNight,
+} from './scoring'
 import { translateText, type MessageTree } from './i18n'
 import { en } from '@/locales/en'
 import { id } from '@/locales/id'
@@ -296,5 +302,26 @@ describe('scoreNight', () => {
       expect(score.complete).toBe(false)
       expect(score.stretch).toBeNull()
     }
+  })
+})
+
+describe('ratingTone', () => {
+  it('marks 4 and 5 good, 3 neutral, 1 and 2 a warning', () => {
+    expect([1, 2, 3, 4, 5].map((rating) => ratingTone({ rating, complete: true }))).toEqual([
+      'warn',
+      'warn',
+      'neutral',
+      'good',
+      'good',
+    ])
+  })
+
+  it('withholds "good" from a provisional score, which can still fall', () => {
+    expect(ratingTone({ rating: 5, complete: false })).toBe('neutral')
+    expect(ratingTone({ rating: 4, complete: false })).toBe('neutral')
+  })
+
+  it('keeps a provisional warning, since cloud can only lower it', () => {
+    expect(ratingTone({ rating: 2, complete: false })).toBe('warn')
   })
 })

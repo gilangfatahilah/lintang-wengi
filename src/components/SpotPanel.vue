@@ -72,7 +72,6 @@ const placeName = computed(() => {
   return l ? `${l.kecamatan}, ${l.kotkab}` : t('panel.resolving')
 })
 
-const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lon.toFixed(4)}°`)
 </script>
 
 <template>
@@ -81,10 +80,9 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
          forecast table scrolls. -->
     <div class="sticky">
       <header class="head">
-        <div class="titles">
-          <h2 class="place">{{ placeName }}</h2>
-          <p class="numeric coords">{{ coords }}</p>
-        </div>
+        <!-- Coordinates live with the forecast point on Skor: nobody decides whether
+             to drive by reading four decimals, and they cost the head a whole line. -->
+        <h2 class="place">{{ placeName }}</h2>
         <PanelControls
           :state="panelState"
           :placement="panelPlacement"
@@ -146,7 +144,7 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
 
     <!-- BMKG requires attribution wherever their data is shown. It belongs next to
          the data it describes, not buried in a page footer. -->
-    <hr class="kawung-rule" aria-hidden="true" />
+    <hr class="horizon-rule" aria-hidden="true" />
     <footer class="attribution">
       <p>
         {{ t('panel.attributionWeather') }}
@@ -194,8 +192,8 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1.25rem 0 0.75rem;
+  gap: 0.875rem;
+  padding: 1rem 0 0.75rem;
   background: var(--panel);
   /* Full bleed behind the panel's side padding, so nothing peeks past its edges. */
   box-shadow:
@@ -221,14 +219,8 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
   gap: 0.75rem;
 }
 
-.titles {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  min-width: 0;
-}
-
 .place {
+  min-width: 0;
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.375rem;
@@ -236,12 +228,6 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
   letter-spacing: -0.015em;
   line-height: 1.2;
   text-wrap: balance;
-}
-
-.coords {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: var(--haze);
 }
 
 /* A segmented control, each segment a full 44px target: this is used one-handed,
@@ -273,7 +259,7 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
 
 .tabs button.on {
   background: var(--panel-raised);
-  color: var(--azure);
+  color: var(--accent);
 }
 
 /*
@@ -294,7 +280,7 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
 
 .attribution a {
   color: var(--star);
-  text-decoration-color: var(--azure-dim);
+  text-decoration-color: var(--accent-dim);
   text-underline-offset: 2px;
 }
 

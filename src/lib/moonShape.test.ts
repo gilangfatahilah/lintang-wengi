@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { litPath, isWaning } from './moonShape'
+import { litPath, isWaning, MARIA } from './moonShape'
 import type { MoonPhaseKey } from '@/types'
 
 /**
@@ -91,5 +91,13 @@ describe('litPath', () => {
     expect(wane.rx).toBeCloseTo(wax.rx)
     expect(wane.limbSweep).toBe(1 - wax.limbSweep)
     expect(wane.terminatorSweep).toBe(1 - wax.terminatorSweep)
+  })
+})
+
+describe('MARIA', () => {
+  it('keeps every sea on the disc, so none spills past the limb', () => {
+    for (const m of MARIA) {
+      expect(Math.hypot(m.cx, m.cy) + Math.max(m.rx, m.ry)).toBeLessThanOrEqual(1)
+    }
   })
 })
