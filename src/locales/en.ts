@@ -76,6 +76,7 @@ export const en = {
     tabs: { score: 'Score', sky: 'Sky', weather: 'Weather' },
     attributionWeather: 'Weather data:',
     attributionAgency: '— Meteorology, Climatology and Geophysical Agency of Indonesia',
+    savedForecast: 'Saved forecast from {time}. BMKG could not be reached.',
     lpStub: 'Light pollution: placeholder data, not calibrated.',
     lpReal: 'Light pollution: World Atlas 2015 — Falchi et al.',
     minimize: 'Collapse the panel',
@@ -113,6 +114,8 @@ export const en = {
     loadingForecast: 'Fetching the BMKG forecast…',
     forecastFallback: 'Scored from light pollution and the moon only.',
     cloudDetail: 'Average across tonight\u2019s dark window',
+    cloudDetailStretch: 'Average across the best stretch of the night',
+    bestStretch: 'Best between {range}',
   },
 
   night: {

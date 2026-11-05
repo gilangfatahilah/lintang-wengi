@@ -60,6 +60,13 @@ Two things that are easy to get wrong and are locked by tests:
 
 `DARKNESS_BY_BORTLE` is an explicit table, not a linear ramp, because the Bortle scale is not linear in what it costs you.
 
+**The rating is for the best stretch of the night, not its average.** `scoreNight` scores every contiguous run of 3-hour forecast slots at least 2 h long, with the moon recomputed *for that run* (via the `moonFor` the caller binds to `moonConditions`), and keeps the longest run within `STRETCH_TOLERANCE` of the best at the same rating. Matching the rating alone was tried and is too loose: buckets are wide enough that "100, 0, 0" still rates 5, so the named hours would include an overcast slot. The whole-night candidate uses the night's own moon, so a night that is good throughout scores exactly as the plain average did. `Score.stretch` carries the hours; the verdict names them, and ScoreTab's cloud row reads them off the score so the two cannot disagree. SkyTab's summary still describes the whole night with `cloudCoverForNight`.
+
+## Offline
+
+Dark sites are remote, and remote means no signal, so the built app is a PWA (`vite-plugin-pwa`, configured in `vite.config.ts`, off in dev). The precache holds the shell, `public/data/*` and the Latin font subsets; the font is self-hosted from `@fontsource-variable` for exactly this reason. `maximumFileSizeToCacheInBytes` is raised above the 2 MiB default because `lp-grid.bin` is larger — Workbox drops an oversized file with only a build warning, so **raise it again when real light pollution data lands** and check `dist/sw.js` lists the grid. BMKG is `NetworkFirst` with a 3-day expiry, CARTO tiles `CacheFirst`; only tiles already viewed work offline. A saved forecast is labelled in the panel footer: `fetchedAt` comes from the response `date` header, which the cached copy keeps, and `isSavedForecast` flags anything older than an hour (the edge caches for 30 min, so a live answer never is). `navigateFallbackDenylist` keeps `/api/` out of the HTML fallback for the same reason `not_found_handling` must stay default.
+
+The home-screen icons in `public/icon-*.png` are `logo-mark.png` in cotton on `--brand`, not the navy mark on `--void`, which would be invisible.
 
 ## Light pollution data
 

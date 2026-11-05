@@ -7,7 +7,6 @@
 import { computed } from 'vue'
 import type { Forecast, LatLng, MoonConditions, NightWindow, Score, SubScoreKey } from '@/types'
 import { bortleText } from '@/lib/lightPollution'
-import { cloudCoverForNight } from '@/lib/scoring'
 import { useI18n } from '@/composables/useI18n'
 import { visibilityDuring } from '@/lib/visibility'
 import { MILKY_WAY_CORE } from '@/lib/skyCatalog'
@@ -38,12 +37,8 @@ const core = computed(() =>
   props.window ? visibilityDuring(MILKY_WAY_CORE, props.point, props.window) : null,
 )
 
-/** The same average the score folds in, so the row and the rating cannot disagree. */
-const cloudCover = computed(() =>
-  props.forecast && props.window
-    ? cloudCoverForNight(props.forecast.points, props.window)
-    : null,
-)
+/** Read off the score itself, so the row and the rating cannot disagree. */
+const cloudCover = computed(() => props.score?.stretch?.cloudCover ?? null)
 
 /** 0-1 per factor, for the meters; null where the factor did not enter the score. */
 function subScore(key: SubScoreKey): number | null {
@@ -113,7 +108,9 @@ const moonTimes = computed(() => {
             <span class="numeric strong">
               {{ cloudCover !== null ? `${Math.round(cloudCover)}%` : '—' }}
             </span>
-            <span v-if="cloudCover !== null" class="detail">{{ t('score.cloudDetail') }}</span>
+            <span v-if="cloudCover !== null" class="detail">{{
+              t(score?.stretch?.wholeNight === false ? 'score.cloudDetailStretch' : 'score.cloudDetail')
+            }}</span>
           </dd>
         </div>
         <span v-if="subScore('clouds') !== null" class="meter" aria-hidden="true">

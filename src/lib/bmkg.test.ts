@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { parseForecast, formatLocalTime, groupByLocalDay, type BmkgResponse } from './bmkg'
+import {
+  parseForecast,
+  formatLocalTime,
+  groupByLocalDay,
+  isSavedForecast,
+  type BmkgResponse,
+} from './bmkg'
 import fixture from './__fixtures__/bmkg-kemayoran.json'
 
 // A real response captured from the live API for Kemayoran (31.71.03.1001).
@@ -188,5 +194,22 @@ describe('groupByLocalDay', () => {
     // hand-maintained month table.
     expect(grouped[0]!.label).toBe('Wed, Aug 5')
     expect(groupByLocalDay(grouped[0]!.points, 'id')[0]!.label).toBe('Rab, 5 Agu')
+  })
+})
+
+describe('isSavedForecast', () => {
+  const fetchedAt = new Date('2026-11-05T06:00:00Z')
+  const forecast = parseForecast(raw, fetchedAt)
+
+  it('treats a response inside the edge cache lifetime as live', () => {
+    expect(isSavedForecast(forecast, new Date('2026-11-05T06:30:00Z'))).toBe(false)
+  })
+
+  it('flags a response over an hour old as a saved copy', () => {
+    expect(isSavedForecast(forecast, new Date('2026-11-05T07:30:00Z'))).toBe(true)
+  })
+
+  it('never flags a forecast whose age is unknown', () => {
+    expect(isSavedForecast(parseForecast(raw), new Date('2030-01-01T00:00:00Z'))).toBe(false)
   })
 })

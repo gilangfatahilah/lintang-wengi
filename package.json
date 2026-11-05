@@ -16,6 +16,7 @@
     "deploy:cf": "pnpm build && wrangler deploy"
   },
   "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "astronomy-engine": "^2.1.19",
     "maplibre-gl": "^5.9.0",
     "vue": "^3.5.13"
@@ -30,8 +31,10 @@
     "@vitejs/plugin-vue": "^6.0.0",
     "typescript": "^5.7.3",
     "vite": "^7.1.0",
+    "vite-plugin-pwa": "^2.0.0",
     "vitest": "^3.2.0",
     "vue-tsc": "^2.2.0",
+    "workbox-window": "^7.4.1",
     "wrangler": "^4.118.0"
   }
 }

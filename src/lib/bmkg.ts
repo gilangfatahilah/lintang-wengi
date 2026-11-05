@@ -68,7 +68,7 @@ function isNightPoint(image: string | undefined): boolean {
   return /-pm\.svg(\?|$)/i.test(image ?? '')
 }
 
-export function parseForecast(raw: BmkgResponse): Forecast {
+export function parseForecast(raw: BmkgResponse, fetchedAt: Date | null = null): Forecast {
   const entry = raw.data?.[0]
   if (!entry?.cuaca?.length) {
     throw new Error('errors.forecastEmpty')
@@ -102,7 +102,27 @@ export function parseForecast(raw: BmkgResponse): Forecast {
       timezone: l.timezone,
     },
     points,
+    fetchedAt,
   }
+}
+
+/**
+ * Past this age the forecast came out of the offline cache, not the network. The
+ * edge caches for 30 minutes, so a response fetched live is never older than that.
+ */
+const SAVED_AFTER_MS = 3600_000
+
+/**
+ * True when the forecast on screen is a saved copy rather than a live answer.
+ *
+ * The service worker falls back to the last response for a desa when BMKG cannot be
+ * reached. That is the right thing to show at a site with no signal, but only if it
+ * says so -- otherwise yesterday's forecast reads as this morning's.
+ */
+export function isSavedForecast(forecast: Forecast, now: Date): boolean {
+  return (
+    forecast.fetchedAt !== null && now.getTime() - forecast.fetchedAt.getTime() > SAVED_AFTER_MS
+  )
 }
 
 /** Renders "HH:MM" as it reads on a clock at the forecast location. */
@@ -154,5 +174,12 @@ export async function fetchForecast(adm4: string, signal?: AbortSignal): Promise
   if (!res.ok) {
     throw new Error('errors.forecastFetch')
   }
-  return parseForecast((await res.json()) as BmkgResponse)
+  // The `date` header is when the response was made, and a cached copy keeps it --
+  // which is what lets isSavedForecast tell a saved forecast from a live one.
+  const date = res.headers.get('date')
+  const fetchedAt = date ? new Date(date) : null
+  return parseForecast(
+    (await res.json()) as BmkgResponse,
+    fetchedAt && !Number.isNaN(fetchedAt.getTime()) ? fetchedAt : null,
+  )
 }

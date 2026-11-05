@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { computeScore, cloudCoverForNight, limitingFactorText } from './scoring'
+import { computeScore, cloudCoverForNight, limitingFactorText, scoreNight } from './scoring'
 import { translateText, type MessageTree } from './i18n'
 import { en } from '@/locales/en'
 import { id } from '@/locales/id'
-import type { ForecastPoint, MoonConditions } from '@/types'
+import type { ForecastPoint, MoonConditions, NightWindow } from '@/types'
 
 const NEW_MOON: MoonConditions = {
   illumination: 0.01,
@@ -195,5 +195,106 @@ describe('cloudCoverForNight', () => {
   it('returns null for an empty forecast', () => {
     const window = { start: new Date('2026-08-05T12:00:00Z'), end: new Date('2026-08-05T22:00:00Z') }
     expect(cloudCoverForNight([], window)).toBeNull()
+  })
+})
+
+describe('scoreNight', () => {
+  // 19:00-05:00 WIB. Points every three hours from 20:00, so the last slot is
+  // clipped by dawn to 90 minutes.
+  const window: NightWindow = {
+    start: new Date('2026-08-05T12:00:00Z'),
+    end: new Date('2026-08-05T22:00:00Z'),
+  }
+  const at = (iso: string, cloudCover: number): ForecastPoint => ({
+    time: new Date(iso),
+    offsetMinutes: 420,
+    cloudCover,
+    temp: 25,
+    humidity: 80,
+    description: { en: '', id: '' },
+    weatherCode: 0,
+    isNight: true,
+  })
+  const night = (clouds: number[], times = ['13', '16', '19', '22']) =>
+    clouds.map((c, i) => at(`2026-08-05T${times[i]}:00:00Z`, c))
+  const darkMoon = () => NEW_MOON
+
+  it('rates the clear end of a night that clears late, not its average', () => {
+    const score = scoreNight({
+      bortle: 1,
+      points: night([100, 100, 0, 0]),
+      window,
+      moon: NEW_MOON,
+      moonFor: darkMoon,
+    })
+    const averaged = computeScore({ bortle: 1, cloudCover: 50, moon: NEW_MOON })
+    expect(score.rating).toBe(5)
+    expect(score.rating).toBeGreaterThan(averaged.rating)
+    expect(score.stretch).toMatchObject({
+      start: new Date('2026-08-05T17:30:00Z'),
+      end: window.end,
+      cloudCover: 0,
+      wholeNight: false,
+    })
+  })
+
+  it('scores a night that is good throughout exactly as the plain average', () => {
+    const points = night([10, 0, 20, 0])
+    const score = scoreNight({ bortle: 3, points, window, moon: NEW_MOON, moonFor: darkMoon })
+    const averaged = computeScore({
+      bortle: 3,
+      cloudCover: cloudCoverForNight(points, window),
+      moon: NEW_MOON,
+    })
+    expect(score.stretch?.wholeNight).toBe(true)
+    expect(score.stretch?.start).toEqual(window.start)
+    expect(score.raw).toBeCloseTo(averaged.raw)
+  })
+
+  it('prefers the clear stretch the moon has left over the one it lights', () => {
+    // Full moon until it sets at 23:00 WIB (16:00Z).
+    const moonFor = (w: NightWindow) =>
+      w.start.getTime() < Date.parse('2026-08-05T16:00:00Z') ? FULL_MOON_ALL_NIGHT : NEW_MOON
+    const score = scoreNight({
+      bortle: 1,
+      points: night([0, 0, 0, 0]),
+      window,
+      moon: { ...FULL_MOON_ALL_NIGHT, fractionAboveHorizon: 0.4 },
+      moonFor,
+    })
+    expect(score.rating).toBe(5)
+    expect(score.stretch?.start).toEqual(new Date('2026-08-05T17:30:00Z'))
+  })
+
+  it('never offers a clipped slot shorter than two hours on its own', () => {
+    const score = scoreNight({
+      bortle: 1,
+      points: night([0, 100, 100, 100], ['12', '15', '18', '21']),
+      window,
+      moon: NEW_MOON,
+      moonFor: darkMoon,
+    })
+    const { start, end } = score.stretch!
+    expect(end.getTime() - start.getTime()).toBeGreaterThanOrEqual(2 * 3600_000)
+  })
+
+  it('keeps the whole night when a cloudier slot does not change the rating', () => {
+    const score = scoreNight({
+      bortle: 1,
+      points: night([0, 5, 0, 0]),
+      window,
+      moon: NEW_MOON,
+      moonFor: darkMoon,
+    })
+    expect(score.stretch?.wholeNight).toBe(true)
+  })
+
+  it('falls back to a provisional score with no stretch when the forecast is missing', () => {
+    for (const points of [null, [at('2026-08-20T13:00:00Z', 0)]]) {
+      const score = scoreNight({ bortle: 2, points, window, moon: NEW_MOON, moonFor: darkMoon })
+      expect(score).toEqual(computeScore({ bortle: 2, cloudCover: null, moon: NEW_MOON }))
+      expect(score.complete).toBe(false)
+      expect(score.stretch).toBeNull()
+    }
   })
 })

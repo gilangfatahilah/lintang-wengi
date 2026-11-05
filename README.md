@@ -68,6 +68,8 @@ The download is 684 MB (~2.9 GB extracted). The stub and real data emit the same
 
 Astronomical calculations (twilight, moon phase and position) run client-side with `astronomy-engine`, with no external API.
 
+**Offline:** the built app installs as a PWA and keeps working without signal once it has been opened online. Light pollution, the kecamatan index and the last forecast for each spot are cached; base map tiles work offline only for areas you have already viewed. A forecast served from the cache is labelled with the time it was saved.
+
 ## Architecture
 
 Architecture details, the constraints that shaped the design, and the things that are easy to get wrong are in [`CLAUDE.md`](CLAUDE.md).

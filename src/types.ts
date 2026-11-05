@@ -73,6 +73,8 @@ export interface Forecast {
     timezone: string
   }
   points: ForecastPoint[]
+  /** When the response was produced, from its `date` header. Null if absent. */
+  fetchedAt: Date | null
 }
 
 /**
@@ -191,4 +193,15 @@ export interface Score {
    * provisional rather than as a confident rating.
    */
   complete: boolean
+  /**
+   * The part of the night the rating describes. Null without a forecast. When
+   * `wholeNight` is false, the rating is for these hours, not the night's average.
+   */
+  stretch: {
+    start: Date
+    end: Date
+    /** Mean cloud cover over the stretch, percent. */
+    cloudCover: number
+    wholeNight: boolean
+  } | null
 }

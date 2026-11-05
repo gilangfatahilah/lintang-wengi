@@ -6,7 +6,8 @@
  */
 import { computed, ref } from 'vue'
 import type { Forecast, LatLng, MoonConditions, NightWindow, Score } from '@/types'
-import { approximateOffsetMinutes } from '@/lib/time'
+import { approximateOffsetMinutes, formatAtOffset, formatShortDate, timezoneLabel } from '@/lib/time'
+import { isSavedForecast } from '@/lib/bmkg'
 import ScoreTab from './ScoreTab.vue'
 import VerdictHeader from './VerdictHeader.vue'
 import SkyTab from './SkyTab.vue'
@@ -17,7 +18,7 @@ import type { IconName } from '@/lib/icons'
 import type { PanelPlacement, PanelState } from '@/lib/panelLayout'
 import { useI18n } from '@/composables/useI18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const props = defineProps<{
   point: LatLng
@@ -58,6 +59,14 @@ const offset = computed(
   () => props.forecast?.points[0]?.offsetMinutes ?? approximateOffsetMinutes(props.point.lon),
 )
 
+/** "5 Nov 14:05 WIB" when the forecast is a saved copy; null when it is live. */
+const savedAt = computed(() => {
+  const f = props.forecast
+  if (!f?.fetchedAt || !isSavedForecast(f, new Date())) return null
+  const o = offset.value
+  return `${formatShortDate(f.fetchedAt, o, locale.value)} ${formatAtOffset(f.fetchedAt, o)} ${timezoneLabel(o)}`
+})
+
 const placeName = computed(() => {
   const l = props.forecast?.location
   return l ? `${l.kecamatan}, ${l.kotkab}` : t('panel.resolving')
@@ -84,7 +93,7 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
         />
       </header>
 
-      <VerdictHeader v-if="score" :score="score" />
+      <VerdictHeader v-if="score" :score="score" :offset-minutes="offset" />
 
       <nav class="tabs" role="tablist" :aria-label="t('panel.tabsLabel')">
         <button
@@ -146,6 +155,7 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
         </a>
         {{ t('panel.attributionAgency') }}
       </p>
+      <p v-if="savedAt" class="fine stub">{{ t('panel.savedForecast', { time: savedAt }) }}</p>
       <p class="fine" :class="{ stub: lpStub }">
         {{ lpStub ? t('panel.lpStub') : t('panel.lpReal') }}
       </p>

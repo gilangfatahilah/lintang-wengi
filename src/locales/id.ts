@@ -82,6 +82,7 @@ export const id: Messages = {
     tabs: { score: 'Skor', sky: 'Langit', weather: 'Cuaca' },
     attributionWeather: 'Data cuaca:',
     attributionAgency: '— Badan Meteorologi, Klimatologi, dan Geofisika',
+    savedForecast: 'Prakiraan tersimpan dari {time}. BMKG tidak dapat dihubungi.',
     lpStub: 'Polusi cahaya: data sementara, belum dikalibrasi.',
     lpReal: 'Polusi cahaya: World Atlas 2015 — Falchi dkk.',
     minimize: 'Ciutkan panel',
@@ -117,6 +118,8 @@ export const id: Messages = {
     loadingForecast: 'Mengambil prakiraan BMKG…',
     forecastFallback: 'Skor dihitung dari polusi cahaya dan bulan saja.',
     cloudDetail: 'Rata-rata selama jendela gelap malam ini',
+    cloudDetailStretch: 'Rata-rata selama bagian terbaik malam ini',
+    bestStretch: 'Terbaik pukul {range}',
   },
 
   night: {

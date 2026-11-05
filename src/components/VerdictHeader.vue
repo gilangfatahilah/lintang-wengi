@@ -6,16 +6,29 @@
  * on every tab. It used to sit inside ScoreTab, and switching to Langit or Cuaca to
  * check *why* the rating was low took the rating itself off screen.
  */
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Score } from '@/types'
 import { ratingText, limitingFactorText } from '@/lib/scoring'
 import { FACTOR_ICONS } from '@/lib/icons'
+import { formatAtOffset, timezoneLabel } from '@/lib/time'
 import { useI18n } from '@/composables/useI18n'
 import Icon from './Icon.vue'
 
 const { t, tx } = useI18n()
 
-const props = defineProps<{ score: Score }>()
+const props = defineProps<{ score: Score; offsetMinutes: number }>()
+
+/**
+ * "01:00–04:00 WIB" when the rating is for part of the night. Without it, a 5 earned
+ * by the clear hours after 01:00 would read as a promise about 20:00.
+ */
+const bestRange = computed(() => {
+  const stretch = props.score.stretch
+  if (!stretch || stretch.wholeNight) return null
+  const from = formatAtOffset(stretch.start, props.offsetMinutes)
+  const to = formatAtOffset(stretch.end, props.offsetMinutes)
+  return `${from}–${to} ${timezoneLabel(props.offsetMinutes)}`
+})
 
 /**
  * Marks the moment the forecast lands.
@@ -58,6 +71,7 @@ watch(
 
     <div class="verdict-text">
       <p class="label">{{ tx(ratingText(score.rating)) }}</p>
+      <p v-if="bestRange" class="reason">{{ t('score.bestStretch', { range: bestRange }) }}</p>
       <p v-if="limitingFactorText(score)" class="reason limit">
         <!-- Names the culprit before the sentence does. -->
         <Icon :name="FACTOR_ICONS[score.limitingFactor!.key]" :size="1.1" />

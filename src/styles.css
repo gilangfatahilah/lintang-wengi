@@ -18,15 +18,15 @@
  * turmeric yellow. Text is undyed cotton.
  *
  * Type: one family, Plus Jakarta Sans (Tokotype, Jakarta), with hierarchy carried by
- * size and weight rather than by a second face. Its tabular figures line up down a
+ * size and weight rather than by a second face. Self-hosted from @fontsource-variable
+ * (imported in main.ts) so the precache can carry it: a font fetched from Google is
+ * a font that is missing on a ridge with no signal. Its tabular figures line up down a
  * column, so nothing here needs a monospace face.
  *
  * Ornament is one motif only: kawung, four petals around a point, used as the section
  * divider and as a faint texture on the empty panel. It is drawn as a CSS mask filled
  * with currentColor, so field mode recolours it with everything else.
  */
-
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
   /* Kombu: the ikat's red-brown, taken down to near-black. Never neutral black. */
@@ -58,8 +58,8 @@
   /* Fill of the dark-window band in the night bar. */
   --night-band: #070404;
 
-  --font-display: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
-  --font-body: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans Variable', 'Segoe UI', system-ui, sans-serif;
 
   --rule: 1px solid color-mix(in srgb, var(--star) 9%, transparent);
   --rule-section: 1px solid color-mix(in srgb, var(--star) 12%, transparent);

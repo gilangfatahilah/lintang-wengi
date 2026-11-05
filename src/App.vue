@@ -11,7 +11,7 @@ import {
 import { loadIndex, findNearest, haversineKm } from '@/lib/wilayah'
 import { fetchForecast } from '@/lib/bmkg'
 import { nightWindow, moonConditions } from '@/lib/astro'
-import { computeScore, cloudCoverForNight } from '@/lib/scoring'
+import { scoreNight } from '@/lib/scoring'
 import MapView from './components/MapView.vue'
 import PlaceSearch from './components/PlaceSearch.vue'
 import SpotPanel from './components/SpotPanel.vue'
@@ -101,12 +101,15 @@ onMounted(async () => {
 })
 
 const score = computed<Score | null>(() => {
-  if (bortle.value === null || !moon.value) return null
-  const cloudCover =
-    forecast.value && window_.value
-      ? cloudCoverForNight(forecast.value.points, window_.value)
-      : null
-  return computeScore({ bortle: bortle.value, cloudCover, moon: moon.value })
+  const point = selected.value
+  if (bortle.value === null || !moon.value || !window_.value || !point) return null
+  return scoreNight({
+    bortle: bortle.value,
+    points: forecast.value?.points ?? null,
+    window: window_.value,
+    moon: moon.value,
+    moonFor: (w) => moonConditions(point, w),
+  })
 })
 
 /** Until the grid loads, assume placeholder rather than claiming calibrated data. */
