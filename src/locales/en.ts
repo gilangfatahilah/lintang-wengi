@@ -30,6 +30,8 @@ export const en = {
     legendBright: 'City glow',
     zoomIn: 'Zoom in',
     zoomOut: 'Zoom out',
+    /** Beside the desa on the map whose BMKG forecast the readout uses. */
+    forecastSource: 'Forecast: {place}',
   },
 
   search: {

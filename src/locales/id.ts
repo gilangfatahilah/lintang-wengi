@@ -36,6 +36,7 @@ export const id: Messages = {
     legendBright: 'Terang kota',
     zoomIn: 'Perbesar',
     zoomOut: 'Perkecil',
+    forecastSource: 'Prakiraan: {place}',
   },
 
   search: {

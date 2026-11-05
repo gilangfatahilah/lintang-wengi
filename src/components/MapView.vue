@@ -3,6 +3,7 @@ import { computed, onMounted, onBeforeUnmount, ref, shallowRef, watch } from 'vu
 import maplibregl, { type StyleSpecification } from 'maplibre-gl'
 import type { LatLng } from '@/types'
 import { overlayGradient, type LpMeta } from '@/lib/lightPollution'
+import { isInView, panIntoView, type Inset } from '@/lib/mapFraming'
 import { ICONS } from '@/lib/icons'
 import { useI18n } from '@/composables/useI18n'
 import Icon from './Icon.vue'
@@ -12,18 +13,34 @@ const { t } = useI18n()
 const props = defineProps<{
   selected: LatLng | null
   lpMeta: LpMeta | null
+  /** Where BMKG's forecast for the selection was issued, once it has arrived. */
+  source: (LatLng & { name: string }) | null
 }>()
 const emit = defineEmits<{ pick: [LatLng] }>()
 
 const container = ref<HTMLDivElement | null>(null)
 const map = shallowRef<maplibregl.Map | null>(null)
 const marker = shallowRef<maplibregl.Marker | null>(null)
+const sourceMarker = shallowRef<maplibregl.Marker | null>(null)
 const overlayVisible = ref(true)
 /** Drawn from the same stops that painted the overlay PNG, so the two cannot disagree. */
 const legendRamp = computed(() =>
   props.lpMeta?.overlayStops ? overlayGradient(props.lpMeta.overlayStops) : null,
 )
 let resizeObserver: ResizeObserver | null = null
+let styleReady = false
+/** Whether the picked point was on screen after the last move the user made. */
+let selectedInView = false
+
+/**
+ * The part of the map a picked point is kept inside. The top is deepest because the
+ * search field sits there and the pin stands above its point; the bottom clears the
+ * legend and the zoom buttons.
+ */
+const FRAME_INSET: Inset = { top: 72, right: 24, bottom: 40, left: 24 }
+
+/** Closer than this on screen, the forecast source hides under the pin and its ring. */
+const SOURCE_MIN_PX = 28
 
 /**
  * CARTO's dark basemap, free for use with attribution. A dark base is not just a
@@ -41,9 +58,12 @@ let resizeObserver: ResizeObserver | null = null
  * rather than written here twice; field mode needs nothing extra, because its
  * filter on the whole canvas recolours this layer with the rest.
  */
+function token(name: string, fallback: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+}
+
 function buildStyle(): StyleSpecification {
-  const ground =
-    getComputedStyle(document.documentElement).getPropertyValue('--void').trim() || '#060812'
+  const ground = token('--void', '#060812')
   return {
     version: 8,
     sources: {
@@ -89,6 +109,118 @@ function addOverlay(m: maplibregl.Map, meta: LpMeta) {
   })
 }
 
+/**
+ * The dashed line from the picked point to the desa BMKG actually forecast for. The
+ * index is kecamatan-granular, so the forecast can come from several kilometres
+ * away; the panel says how far, and this shows which way. Painted from --accent
+ * like the pin it hangs off; field mode reaches it through the filter on the canvas.
+ */
+function addSourceLink(m: maplibregl.Map) {
+  if (m.getSource('forecast-link')) return
+  m.addSource('forecast-link', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  })
+  m.addLayer({
+    id: 'forecast-link',
+    type: 'line',
+    source: 'forecast-link',
+    layout: { 'line-cap': 'round' },
+    paint: {
+      'line-color': token('--accent', '#ffffff'),
+      'line-width': 1.25,
+      'line-opacity': 0.7,
+      'line-dasharray': [2, 2.5],
+    },
+  })
+}
+
+const sourceLabel = computed(() =>
+  props.source ? t('map.forecastSource', { place: props.source.name }) : '',
+)
+
+function syncSource() {
+  const m = map.value
+  if (!m || !styleReady) return
+  const from = props.selected
+  const to = props.source
+  const link = m.getSource('forecast-link') as maplibregl.GeoJSONSource | undefined
+
+  if (!from || !to) {
+    link?.setData({ type: 'FeatureCollection', features: [] })
+    sourceMarker.value?.remove()
+    return
+  }
+
+  link?.setData({
+    type: 'Feature',
+    properties: {},
+    geometry: {
+      type: 'LineString',
+      coordinates: [
+        [from.lon, from.lat],
+        [to.lon, to.lat],
+      ],
+    },
+  })
+
+  if (!sourceMarker.value) {
+    const el = document.createElement('div')
+    el.className = 'forecast-source'
+    el.innerHTML = '<span class="dot"></span><span class="label"></span>'
+    sourceMarker.value = new maplibregl.Marker({ element: el, anchor: 'center' })
+  }
+  const label = sourceMarker.value.getElement().querySelector('.label')
+  if (label) label.textContent = sourceLabel.value
+  sourceMarker.value.setLngLat([to.lon, to.lat]).addTo(m)
+  placeSource()
+}
+
+/**
+ * At low zoom the source sits under the pin, so it hides rather than stacking the
+ * two. Near the right edge its label would be cut off by the map, so it moves to
+ * the left of the dot.
+ */
+function placeSource() {
+  const m = map.value
+  const el = sourceMarker.value?.getElement()
+  if (!m || !el || !styleReady || !props.selected || !props.source) return
+  const a = m.project([props.selected.lon, props.selected.lat])
+  const b = m.project([props.source.lon, props.source.lat])
+  const near = Math.hypot(a.x - b.x, a.y - b.y) < SOURCE_MIN_PX
+  m.setLayoutProperty('forecast-link', 'visibility', near ? 'none' : 'visible')
+  el.classList.toggle('near', near)
+  const label = el.querySelector<HTMLElement>('.label')
+  const overflows = label ? b.x + 9 + label.offsetWidth > viewSize(m).width : false
+  el.classList.toggle('flip', overflows)
+}
+
+function viewSize(m: maplibregl.Map) {
+  const canvas = m.getCanvas()
+  return { width: canvas.clientWidth, height: canvas.clientHeight }
+}
+
+function trackSelectedInView() {
+  const m = map.value
+  const p = props.selected
+  if (!m || !p) return
+  const size = viewSize(m)
+  // A collapsed map shows nothing; keep the last answer for when it comes back.
+  if (size.width === 0 || size.height === 0) return
+  selectedInView = isInView(m.project([p.lon, p.lat]), size)
+}
+
+/** Nudges the map so the picked point clears the edges and the overlays on them. */
+function keepSelectedInView(duration: number) {
+  const m = map.value
+  const p = props.selected
+  if (!m || !p) return
+  const size = viewSize(m)
+  if (size.width === 0 || size.height === 0) return
+  const [dx, dy] = panIntoView(m.project([p.lon, p.lat]), size, FRAME_INSET)
+  if (dx || dy) m.panBy([dx, dy], { duration })
+}
+
 onMounted(() => {
   if (!container.value) return
   const m = new maplibregl.Map({
@@ -101,12 +233,21 @@ onMounted(() => {
       [146, 10],
     ],
     attributionControl: { compact: true },
+    // The ResizeObserver below covers window resizes too. MapLibre's own window
+    // listener would resize first, and the `moveend` that fires would record the
+    // point as off screen before the observer could keep it on.
+    trackResize: false,
   })
   m.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
   m.on('click', (e) => emit('pick', { lat: e.lngLat.lat, lon: e.lngLat.lng }))
   m.on('load', () => {
     if (props.lpMeta) addOverlay(m, props.lpMeta)
+    addSourceLink(m)
+    styleReady = true
+    syncSource()
   })
+  m.on('move', placeSource)
+  m.on('moveend', trackSelectedInView)
   map.value = m
 
   /*
@@ -115,7 +256,14 @@ onMounted(() => {
    * unresized map renders a stretched canvas with the pointer landing in the wrong
    * place -- clicks would return coordinates for somewhere the user did not click.
    */
-  resizeObserver = new ResizeObserver(() => m.resize())
+  // A point the user could see before the resize stays seen after it; one they had
+  // panned away from on purpose is left where they put it.
+  resizeObserver = new ResizeObserver(() => {
+    const keep = selectedInView
+    m.resize()
+    if (keep) keepSelectedInView(0)
+    trackSelectedInView()
+  })
   resizeObserver.observe(container.value)
 
   // Dev-only handle, so a console or a browser-driving script can convert between
@@ -128,6 +276,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
+  styleReady = false
   map.value?.remove()
   map.value = null
 })
@@ -149,12 +298,15 @@ watch(
     if (!marker.value) {
       const el = document.createElement('div')
       el.className = 'spot-marker'
-      // The glyph goes in a child, not on the marker element: MapLibre owns that
-      // element's `transform` for positioning, so animating it there would fight
-      // the map on every pan.
-      el.innerHTML = `<svg class="pin" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ICONS.pin}</svg>`
-      // The tip names the point, so the glyph hangs above it rather than centring on it.
-      marker.value = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+      // The element has no size, so MapLibre's centre anchor puts it exactly on the
+      // coordinate: the ring is centred on that spot and the pin stands with its tip
+      // in the ring. The glyphs are children, not the element itself, because
+      // MapLibre owns the element's `transform` and animating it would fight the map
+      // on every pan.
+      el.innerHTML =
+        '<span class="ring"></span>' +
+        `<svg class="pin" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ICONS.pin}</svg>`
+      marker.value = new maplibregl.Marker({ element: el, anchor: 'center' })
     }
     marker.value.setLngLat([point.lon, point.lat]).addTo(m)
 
@@ -163,14 +315,21 @@ watch(
     // picking a second point moves a pin that never acknowledges the tap. Done in
     // CSS rather than the Web Animations API so `prefers-reduced-motion` still
     // neutralises it from one place.
-    const pin = marker.value.getElement().firstElementChild
-    if (pin) {
-      pin.classList.remove('drop')
-      void (pin as HTMLElement).offsetWidth
-      pin.classList.add('drop')
-    }
+    const el = marker.value.getElement()
+    el.classList.remove('drop')
+    void el.offsetWidth
+    el.classList.add('drop')
+
+    // A tap near an edge leaves the pin under the search field or half off the map.
+    // Search and GPS picks are already flying to the point; leave those alone.
+    if (!m.isMoving()) keepSelectedInView(200)
+    trackSelectedInView()
+    syncSource()
   },
 )
+
+// The label changes width with the language, so it is placed again as well as relabelled.
+watch([() => props.source, sourceLabel], syncSource)
 
 /** Lets the parent recentre the map when a point arrives from search or GPS. */
 defineExpose({
@@ -220,6 +379,16 @@ watch(overlayVisible, (visible) => {
 
 .map {
   height: 100%;
+}
+
+/* A click here picks a coordinate, so the pointer is a sight rather than MapLibre's
+   open hand. Dragging still grabs, which is what pans. */
+.map :deep(.maplibregl-canvas-container.maplibregl-interactive) {
+  cursor: crosshair;
+}
+
+.map :deep(.maplibregl-canvas-container.maplibregl-interactive:active) {
+  cursor: grabbing;
 }
 
 .overlay-box {
@@ -278,30 +447,65 @@ watch(overlayVisible, (visible) => {
 </style>
 
 <style>
-/* Marker element lives outside the component's scope, so this rule is global. */
+/* Marker elements live outside the component's scope, so these rules are global. */
+.spot-marker,
+.forecast-source {
+  width: 0;
+  height: 0;
+  /* Clicking on the pin picks the point under it, the same as clicking beside it. */
+  pointer-events: none;
+}
+
 .spot-marker {
-  width: 26px;
-  height: 26px;
   color: var(--accent);
 }
 
+/* The coordinate the readout was computed for. The pin says "here" from a distance;
+   the ring says exactly where, which the pin's tip, a single pixel, cannot. Flattened
+   to an ellipse so it lies on the ground the pin stands on. */
+.spot-marker .ring {
+  position: absolute;
+  left: -8px;
+  top: -3px;
+  width: 16px;
+  height: 6px;
+  box-sizing: border-box;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
 .spot-marker .pin {
+  position: absolute;
+  left: -13px;
+  /* The glyph's tip is at y 22.8 of 24, so the box drops by the remaining 1.2 units
+     to put the tip on the coordinate rather than just above it. */
+  bottom: calc(-26px * 1.2 / 24);
   display: block;
-  width: 100%;
-  height: 100%;
-  /* A dark edge rather than a border: the pin has to stay legible over the black of
-     open sea and over the glare of a city, and only one of those needs the outline. */
+  width: 26px;
+  height: 26px;
+}
+
+/* A dark edge rather than a border: both have to stay legible over the black of open
+   sea and over the glare of a city, and only one of those needs the outline. */
+.spot-marker .pin,
+.spot-marker .ring,
+.forecast-source .dot {
   filter: drop-shadow(0 0 1px color-mix(in srgb, var(--void) 95%, transparent)) drop-shadow(0 1px 2px color-mix(in srgb, var(--void) 60%, transparent));
 }
 
 /*
- * Dropped rather than simply appearing, because outdoors and one-handed the finger
- * that placed it is covering the spot. Transform and opacity only, so field mode is
- * untouched; `prefers-reduced-motion` collapses it globally in styles.css.
+ * The pin drops, because outdoors and one-handed the finger that placed it is
+ * covering the spot; the ring closes in on the point as it lands, the way a finder
+ * settles on a star. Transform and opacity only, so field mode is untouched;
+ * `prefers-reduced-motion` collapses both globally in styles.css.
  */
-.spot-marker .pin.drop {
+.spot-marker.drop .pin {
   animation: spot-drop 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
   transform-origin: 50% 100%;
+}
+
+.spot-marker.drop .ring {
+  animation: spot-lock 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 @keyframes spot-drop {
@@ -313,6 +517,52 @@ watch(overlayVisible, (visible) => {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+@keyframes spot-lock {
+  from {
+    opacity: 0;
+    transform: scale(3);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.forecast-source .dot {
+  position: absolute;
+  left: -3.5px;
+  top: -3.5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.forecast-source .label {
+  position: absolute;
+  left: 9px;
+  top: 0;
+  transform: translateY(-50%);
+  padding: 0.0625rem 0.375rem;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+  /* MapLibre sets its own Helvetica on the map container. */
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--star);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+
+.forecast-source.flip .label {
+  left: auto;
+  right: 9px;
+}
+
+.forecast-source.near {
+  visibility: hidden;
 }
 
 /* Keep MapLibre's chrome in the app's register rather than its default blue-grey. */

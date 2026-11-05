@@ -193,9 +193,9 @@ export const ICONS: Record<IconName, string> = {
     '<path d="M7.2 4.6c3-1.9 6.6-1.9 9.6 0" opacity="0.45"/></g>',
 
   /*
-   * The map marker. The point it names is the tip, not the centre, so whatever
-   * places it has to anchor at the bottom -- centring a pin puts the tip half a
-   * glyph below the coordinate the app actually sampled.
+   * The map marker. The point it names is the tip (y 22.8), not the centre, so
+   * whatever places it has to put the tip on the coordinate -- centring a pin puts
+   * the tip half a glyph below the point the app actually sampled.
    *
    * The head is a real hole, cut with `fill-rule="evenodd"` rather than filled with
    * a background colour, so the map shows through it. That is what keeps the pin

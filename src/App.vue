@@ -124,6 +124,11 @@ const distanceKm = computed(() =>
     : null,
 )
 
+const forecastSource = computed(() => {
+  const l = forecast.value?.location
+  return l ? { lat: l.lat, lon: l.lon, name: l.desa } : null
+})
+
 /**
  * Everything computable offline resolves immediately; only the forecast waits on the
  * network. The panel therefore shows sky darkness, the dark window and the moon the
@@ -228,6 +233,7 @@ watch(fieldMode, (on) => {
           ref="mapView"
           :selected="selected"
           :lp-meta="grid?.meta ?? null"
+          :source="forecastSource"
           @pick="pick"
         />
         <PlaceSearch :index="index" :lp-meta="grid?.meta ?? null" @pick="pickAndFly" />
