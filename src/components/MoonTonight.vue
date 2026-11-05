@@ -42,10 +42,12 @@ const percent = computed(() => Math.round(moon.value.illumination * 100))
 </template>
 
 <style scoped>
+/* A card: the one thing in the empty panel that is a reading rather than prose. */
 .moon-tonight {
   margin-top: 1.75rem;
-  padding-top: 1.25rem;
-  border-top: var(--rule-section);
+  padding: 1rem 1.125rem;
+  border-radius: var(--radius);
+  background: var(--panel-raised);
 }
 
 .phase {
@@ -57,7 +59,8 @@ const percent = computed(() => Math.round(moon.value.illumination * 100))
 
 .name {
   font-family: var(--font-display);
-  font-size: 1.375rem;
+  font-size: 1.25rem;
+  font-weight: 700;
   color: var(--star);
 }
 

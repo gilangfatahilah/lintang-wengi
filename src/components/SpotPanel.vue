@@ -1,13 +1,14 @@
 <script setup lang="ts">
 /**
- * The panel is a shell: place, tabs, and the BMKG attribution. Each tab owns its own
- * content and its own computation, so the expensive sky work only runs once someone
- * asks to see it.
+ * The panel is a shell: a sticky head (place, verdict, tabs), the active tab, and the
+ * BMKG attribution. Each tab owns its own content and its own computation, so the
+ * expensive sky work only runs once someone asks to see it.
  */
 import { computed, ref } from 'vue'
 import type { Forecast, LatLng, MoonConditions, NightWindow, Score } from '@/types'
 import { approximateOffsetMinutes } from '@/lib/time'
 import ScoreTab from './ScoreTab.vue'
+import VerdictHeader from './VerdictHeader.vue'
 import SkyTab from './SkyTab.vue'
 import WeatherTab from './WeatherTab.vue'
 import Icon from './Icon.vue'
@@ -67,33 +68,39 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
 
 <template>
   <aside class="panel">
-    <header class="head">
-      <div class="titles">
-        <h2 class="place">{{ placeName }}</h2>
-        <p class="numeric coords">{{ coords }}</p>
-      </div>
-      <PanelControls
-        :state="panelState"
-        :placement="panelPlacement"
-        @minimize="$emit('minimize')"
-        @maximize="$emit('maximize')"
-      />
-    </header>
+    <!-- Sticky: the place and its verdict stay in view on every tab and while the
+         forecast table scrolls. -->
+    <div class="sticky">
+      <header class="head">
+        <div class="titles">
+          <h2 class="place">{{ placeName }}</h2>
+          <p class="numeric coords">{{ coords }}</p>
+        </div>
+        <PanelControls
+          :state="panelState"
+          :placement="panelPlacement"
+          @minimize="$emit('minimize')"
+          @maximize="$emit('maximize')"
+        />
+      </header>
 
-    <nav class="tabs" role="tablist" :aria-label="t('panel.tabsLabel')">
-      <button
-        v-for="tab in TABS"
-        :key="tab.key"
-        type="button"
-        role="tab"
-        :aria-selected="active === tab.key"
-        :class="{ on: active === tab.key }"
-        @click="active = tab.key"
-      >
-        <Icon :name="tab.icon" :size="1.3" />
-        {{ t(tab.labelKey) }}
-      </button>
-    </nav>
+      <VerdictHeader v-if="score" :score="score" />
+
+      <nav class="tabs" role="tablist" :aria-label="t('panel.tabsLabel')">
+        <button
+          v-for="tab in TABS"
+          :key="tab.key"
+          type="button"
+          role="tab"
+          :aria-selected="active === tab.key"
+          :class="{ on: active === tab.key }"
+          @click="active = tab.key"
+        >
+          <Icon :name="tab.icon" :size="1.15" />
+          {{ t(tab.labelKey) }}
+        </button>
+      </nav>
+    </div>
 
     <ScoreTab
       v-if="active === 'skor'"
@@ -130,6 +137,7 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
 
     <!-- BMKG requires attribution wherever their data is shown. It belongs next to
          the data it describes, not buried in a page footer. -->
+    <hr class="kawung-rule" aria-hidden="true" />
     <footer class="attribution">
       <p>
         {{ t('panel.attributionWeather') }}
@@ -150,7 +158,7 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  padding: 1.25rem;
+  padding: 0 1.25rem 1.25rem;
   overflow-y: auto;
 }
 
@@ -164,6 +172,36 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
   width: 100%;
   max-width: 46rem;
   margin-inline: auto;
+}
+
+/*
+ * Opaque, because the readout scrolls underneath it. The padding lives here rather
+ * than on .panel so content cannot show through a gap above the head.
+ */
+.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 0 0.75rem;
+  background: var(--panel);
+  /* Full bleed behind the panel's side padding, so nothing peeks past its edges. */
+  box-shadow:
+    -1.25rem 0 0 var(--panel),
+    1.25rem 0 0 var(--panel);
+}
+
+/*
+ * Stacked, the panel is under half the screen tall and the head alone would take
+ * most of it, leaving the tab a sliver to scroll in. There it scrolls away with the
+ * rest. Same breakpoint as App.vue and STACKED_QUERY.
+ */
+@media (max-width: 52rem) {
+  .sticky {
+    position: static;
+  }
 }
 
 .head {
@@ -180,53 +218,52 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
   min-width: 0;
 }
 
-
-/* The place is lettered the way an atlas letters it: serif, and the largest type in
-   the panel bar the verdict. */
 .place {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 1.75rem;
-  font-weight: 400;
-  line-height: 1.1;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
   text-wrap: balance;
 }
 
 .coords {
-  margin: 0.25rem 0 0;
+  margin: 0;
   font-size: 0.8125rem;
   color: var(--haze);
 }
 
+/* A segmented control, each segment a full 44px target: this is used one-handed,
+   outdoors, often with gloves. */
 .tabs {
-  display: flex;
-  gap: 1.25rem;
-  margin-bottom: -0.5rem;
-  border-bottom: var(--rule);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: var(--radius);
+  background: var(--void);
 }
 
 .tabs button {
-  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0 0 0.5rem;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  border-radius: 0.5625rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--haze);
 }
 
-.tabs button.on {
+.tabs button:hover {
   color: var(--star);
 }
 
-/* The rule sits on the nav; the active marker overlaps it rather than shifting it. */
-.tabs button.on::after {
-  content: '';
-  position: absolute;
-  inset: auto 0 -1px;
-  height: 2px;
-  background: var(--azure);
+.tabs button.on {
+  background: var(--panel-raised);
+  color: var(--azure);
 }
 
 /*
@@ -236,9 +273,7 @@ const coords = computed(() => `${props.point.lat.toFixed(4)}°, ${props.point.lo
  * their data. Blank space below the credit is just a readout that has ended.
  */
 .attribution {
-  padding-top: 1rem;
-  border-top: var(--rule-section);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: var(--haze);
 }

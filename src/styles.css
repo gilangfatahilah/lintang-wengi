@@ -8,63 +8,67 @@
  * observatory torch does.
  *
  * Colour carries three meanings and only three. Blue is identity and interaction,
- * green is "good", orange is "this is what is holding you back". Each token below
+ * green is "good", turmeric is "this is what is holding you back". Each token below
  * says which one it is, because a token that means two things -- as --ember once did,
  * being both "accent" and "warning" -- cannot be changed without changing both.
  *
- * The surfaces are the ink of a printed star atlas rather than neutral black: the
- * same navy as the logo, taken down to almost nothing. Text is the atlas's paper.
+ * The palette is "Tenun Kombu", the dyes of a Sumba ikat: surfaces are the red-brown
+ * of kombu root taken down to almost nothing, interaction is the indigo (nila) the
+ * same cloth is woven with -- which is also the logo's hue -- and the warning is
+ * turmeric yellow. Text is undyed cotton.
  *
- * Type: Newsreader, a serif, names places and states the verdict -- the two things
- * an atlas would letter by hand. Everything else, figures included, is Atkinson
- * Hyperlegible Next, drawn for legibility under poor conditions, which is what a
- * screen read at arm's length in the dark is. Its tabular figures still line up
- * down a column, so nothing here needs a monospace face.
+ * Type: one family, Plus Jakarta Sans (Tokotype, Jakarta), with hierarchy carried by
+ * size and weight rather than by a second face. Its tabular figures line up down a
+ * column, so nothing here needs a monospace face.
+ *
+ * Ornament is one motif only: kawung, four petals around a point, used as the section
+ * divider and as a faint texture on the empty panel. It is drawn as a CSS mask filled
+ * with currentColor, so field mode recolours it with everything else.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --void: #080d1c;
-  --panel: #0c1428;
-  --panel-raised: #13203d;
+  /* Kombu: the ikat's red-brown, taken down to near-black. Never neutral black. */
+  --void: #0e0909;
+  --panel: #160e0d;
+  --panel-raised: #241816;
 
   /*
    * Identity and interaction. --brand is the logo navy exactly as drawn; at 1.6:1
    * against --panel it can only ever be a surface, never text, so the accent is the
-   * same hue lifted to 6.7:1. Keeping both means the brand colour still appears
-   * literally somewhere rather than only as an approximation of itself.
+   * same hue lifted -- the nila of the cloth. Keeping both means the brand colour
+   * still appears literally somewhere rather than only as an approximation of itself.
    */
   --brand: #193667;
-  --azure: #6c9be0;
-  --azure-dim: #2a4a80;
+  --azure: #93a6e2;
+  --azure-dim: #33406e;
 
-  /*
-   * Warning, and nothing else: errors, the limiting factor, an incomplete score.
-   * Ochre, the colour of an annotation inked onto a chart, not a vermilion alarm.
-   */
-  --ember: #e3a045;
-  --ember-dim: #6b4a1c;
+  /* Warning, and nothing else: errors, the limiting factor, an incomplete score.
+     Turmeric, the ikat's yellow. */
+  --ember: #e8b44a;
+  --ember-dim: #5c4316;
 
-  --star: #e6dfca;
-  --haze: #8791a8;
+  /* Undyed cotton, and the cotton in shadow. --haze is 7:1 against --panel. */
+  --star: #f2e4cf;
+  --haze: #b4a596;
 
-  /*
-   * "Good": clear sky, a dark night, an object worth pointing at. Teal rather than
-   * the cyan it used to be -- cyan sits 27 degrees from --azure, close enough that
-   * "this is fine" and "this is selected" damped each other out.
-   */
-  --clear: #5fd6a6;
+  /* "Good": clear sky, a dark night, an object worth pointing at. */
+  --clear: #8fd0a0;
   /* Fill of the dark-window band in the night bar. */
-  --night-band: #04081a;
+  --night-band: #070404;
 
-  --font-display: 'Newsreader', Georgia, serif;
-  --font-body: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
 
-  --rule: 1px solid rgba(230, 223, 202, 0.08);
-  /* Between sections only, like a graticule: present, but never the loudest line. */
-  --rule-section: 1px dashed rgba(230, 223, 202, 0.14);
+  --rule: 1px solid color-mix(in srgb, var(--star) 9%, transparent);
+  --rule-section: 1px solid color-mix(in srgb, var(--star) 12%, transparent);
+  --radius: 0.75rem;
   --panel-width: 25rem;
+
+  /* The kawung unit, as a mask. White only because a mask reads alpha; the colour
+     comes from whatever `background` the masked element sets. */
+  --kawung: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='white'%3E%3Cellipse cx='12' cy='6' rx='3.2' ry='5'/%3E%3Cellipse cx='12' cy='18' rx='3.2' ry='5'/%3E%3Cellipse cx='6' cy='12' rx='5' ry='3.2'/%3E%3Cellipse cx='18' cy='12' rx='5' ry='3.2'/%3E%3C/g%3E%3C/svg%3E");
 
   color-scheme: dark;
 }
@@ -118,6 +122,8 @@ body {
   background: var(--void);
   color: var(--star);
   font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -165,9 +171,23 @@ input {
  */
 .label-quiet {
   margin: 0;
-  font-size: 0.8125rem;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--haze);
+}
+
+/*
+ * The section divider: a row of kawung, faint. Decorative, so the element carrying it
+ * is aria-hidden; the structure it marks is already in the headings.
+ */
+.kawung-rule {
+  height: 0.625rem;
+  margin: 0;
+  border: 0;
+  flex: none;
+  background: color-mix(in srgb, var(--star) 16%, transparent);
+  -webkit-mask: var(--kawung) left center / 0.625rem 0.625rem space no-repeat;
+  mask: var(--kawung) left center / 0.625rem 0.625rem space no-repeat;
 }
 
 .numeric {

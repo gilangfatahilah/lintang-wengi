@@ -60,16 +60,19 @@ Two things that are easy to get wrong and are locked by tests:
 
 `DARKNESS_BY_BORTLE` is an explicit table, not a linear ramp, because the Bortle scale is not linear in what it costs you.
 
+
 ## Light pollution data
 
 Currently **stub data** — synthesised from city positions by `scripts/build_lp_grid.py --stub`. Values are plausible, not measured, and the UI says so. Known stub artifacts: its glow falloff has too long a tail (open ocean 340 km south of Java reads Bortle 3 instead of 1) and mid-sized cities saturate (Yogyakarta reads Bortle 9 instead of ~6–7). Do not tune these — the fix is real data.
+
+**Link the dataset by its DOI, never by a file URL.** The direct download host moved from `datapub.gfz-potsdam.de` to `datapub.gfz.de` and in October 2026 neither answered at all, while the DOI kept resolving. A file URL in these docs goes stale silently; the DOI is the one address GFZ has committed to.
 
 Both stub and real paths emit the same contract (`lp-grid.bin` uint8 + `lp-meta.json` describing the decode), so swapping in real data is a file replacement with no code change:
 
 ```bash
 # 684 MB zipped, ~2.9 GB extracted. Falchi et al. 2016, artificial zenith
-# radiance in mcd/m^2 on a 30 arcsec grid.
-curl -O https://datapub.gfz-potsdam.de/download/10.5880.GFZ.1.4.2016.001/World_Atlas_2015.zip
+# radiance in mcd/m^2 on a 30 arcsec grid. Download World_Atlas_2015.zip from
+# https://doi.org/10.5880/GFZ.1.4.2016.001 into scripts/raw/ and unzip it there.
 pip install rasterio    # wheels bundle GDAL; no system GDAL needed
 python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015.tif
 pnpm test               # calibration suite activates automatically
@@ -103,11 +106,11 @@ Default is English, but a browser asking for Indonesian gets Indonesian; an expl
 
 The app is a field instrument, not a web page: used outdoors at night by people whose dark adaptation a bright screen destroys. Hence the near-black surface and nothing that glares. "Mode lapangan" drops the whole interface — map included — to red monochrome. Keep new UI inside that constraint. Rationale is in the header comment of `src/styles.css`.
 
-**The look is a printed star atlas, not a dashboard.** Surfaces are the logo navy taken down to near-black (`--void #080d1c`), never neutral black; text is warm paper. Newsreader (serif) letters place names, the verdict sentence and the empty-state line — nothing else. Everything else, figures included, is Atkinson Hyperlegible Next with `tabular-nums`; there is no monospace face, and no uppercase tracked-out labels — section labels are `.label-quiet`, sentence case in `--haze`. Sections are separated by `--rule-section` (dashed, like a graticule) rather than boxes. The verdict is five stars lit to the rating, unlit ones the same glyph at low opacity. These were chosen to replace a set of generic defaults (Space Grotesk + Plex Mono, vermilion on black, eyebrow labels, a stat tile); do not drift back to them.
+**The look is "Tenun Kombu": the dyes of a Sumba ikat, not a dashboard.** Surfaces are kombu red-brown taken down to near-black (`--void #0e0909`), never neutral black; text is undyed cotton; interaction is the cloth's indigo, which is also the logo's hue. One family, Plus Jakarta Sans (Tokotype), with hierarchy carried by size and weight; `--font-display` and `--font-body` both name it and stay separate tokens only so a heading face can return without touching components. Figures use `tabular-nums`; there is no monospace face and no uppercase tracked-out labels — section labels are `.label-quiet`, sentence case in `--haze`. The one ornament is *kawung*, drawn as a CSS mask (`--kawung`) filled from a token: `.kawung-rule` divides sections and a 4% tile textures the empty panel. Filled shapes are given by role: the limiting factor is a chip, the factor readout is one raised row per factor with a meter. This replaced a printed-star-atlas look (Newsreader serif, dashed graticule rules), which itself replaced generic defaults (Space Grotesk + Plex Mono, vermilion on black); the atlas read as dated and hard to scan. Smallest type is 12px.
 
 Translucent surfaces over the map use `color-mix(in srgb, var(--panel) N%, transparent)`, never a literal `rgba()` — a literal colour is a value field mode cannot reach.
 
-**Colour carries three meanings and only three.** `--azure` (with `--azure-dim`, and `--brand` for the literal logo navy) is identity and interaction: active tab, selected row, focus ring, map marker, logo. `--ember` (ochre, the colour of an annotation inked onto a chart) is warning and nothing else: errors, the limiting factor, a provisional score. `--clear` is "good". `--ember` used to mean both accent and warning, which is why recolouring the app was a token split rather than a find-and-replace — a single token that means two things cannot be changed without changing both.
+**Colour carries three meanings and only three.** `--azure` (with `--azure-dim`, and `--brand` for the literal logo navy) is identity and interaction: active tab, selected row, focus ring, map marker, logo. `--ember` (turmeric, the ikat's yellow) is warning and nothing else: errors, the limiting factor, a provisional score. `--clear` is "good". `--ember` used to mean both accent and warning, which is why recolouring the app was a token split rather than a find-and-replace — a single token that means two things cannot be changed without changing both.
 
 `--brand` is `#193667` exactly as the logo is drawn, and at 1.6:1 against `--panel` it can only ever be a surface. Anything that needs to be *read* uses `--azure`, the same hue lifted to 6.7:1.
 
@@ -126,6 +129,8 @@ Two traps when checking any of this in a browser: **Vue hashes scoped keyframe n
 `MoonGlyph.vue` draws the actual phase from `illumination`, so the picture cannot disagree with the number printed beside it. The geometry lives in `src/lib/moonShape.ts` because it got the terminator's curvature backwards once and rendered a full moon as a black disc — a component cannot be unit-tested into admitting that.
 
 **The empty state answers what does not need a location.** Phase and illuminated fraction are geocentric — the same number for every observer on Earth at a given instant — so `MoonTonight.vue` can state them before a point is picked. Moonrise, moonset and time-above-horizon are not, vary by tens of minutes across the archipelago, and belong to the readout that appears after a click. `src/lib/moonTonight.ts` exposes only the two that travel; completing the set is the mistake it exists to prevent. It is evaluated at the midnight of the night in question, pivoting on local noon, because illumination moves up to seven points a day and "now" at breakfast is not tonight.
+
+**The verdict lives in a sticky head, not in a tab.** `VerdictHeader.vue` is rendered by `SpotPanel` above the tabs so the rating and its limiting factor stay in view while you read the evidence on Langit or Cuaca. The head stops sticking below the 52rem breakpoint: stacked, the panel is under half the screen and the head would take most of it.
 
 `NightBar.vue` is the signature element: dark window, cloud cover, and moon presence on one time axis. It answers *when* to go, which is the decision being made. Its SVG uses a uniform aspect ratio — an earlier `preserveAspectRatio="none"` distorted all text and must not come back.
 
@@ -147,3 +152,18 @@ Three things that will bite:
 **Do not use `:global(...)` as the first compound selector in a scoped block.** `:global(.body[data-placement='below']) .window-controls .icon { transform: rotate(90deg) }` compiled to a rule matching `.body` itself and rotated the entire application ninety degrees on narrow screens — a total layout failure that `pnpm build` and every unit test passed straight through. Pass the state down as a prop and put the class where it belongs.
 
 The collapse and expand glyphs are named for **what they draw**, not for the action they trigger. Naming them `minimize`/`maximize` is precisely how they ended up pointing the wrong way: collapsing a right-hand panel moves it *toward* the right edge, not away from it.
+
+<!-- antislop:start -->
+## antislop
+For UI, copy, people, mobile layout, or code comments work, read these installed skill files directly (use these paths even if a same-named global skill exists):
+- Core filter, always on: `antislop`: `.claude/skills/antislop/SKILL.md`
+- UI / visual: `antislop-ui`: `.claude/skills/antislop-ui/SKILL.md`
+- Copy & text: `antislop-copywriting`: `.claude/skills/antislop-copywriting/SKILL.md`
+- People: `antislop-human`: `.claude/skills/antislop-human/SKILL.md`
+- Mobile / responsive: `antislop-layoutmobile`: `.claude/skills/antislop-layoutmobile/SKILL.md`
+- Code comments: `antislop-code`: `.claude/skills/antislop-code/SKILL.md`
+Before starting, follow the core's "Two Usage Modes" section in strict order: explicit session instruction first, then global preference, then ask. A session instruction always wins. For a resolved mode, say `antislop active: <mode> (session override).` or `antislop active: <mode> (global preference).` once before presenting findings or making edits, using the actual mode and source. Acknowledging the user's request without naming the source does not replace this notice.
+Only an explicit choice of antislop during or after selects a session mode. A request to review, audit, or avoid file edits does not select a mode; read the global preference in that case. Another skill's mode does not select antislop's mode.
+If the mode is unresolved, ask during/after and end the response; wait for the answer before any UI review, planning, or concept. For read-only tasks, put the active-mode notice only at the start of the final answer, never in progress messages. For editing tasks, announce before the first edit and omit it from the final answer.
+To update antislop later: `npx antislop-ai --update`, or run `npx antislop-ai` and pick Overwrite them.
+<!-- antislop:end -->

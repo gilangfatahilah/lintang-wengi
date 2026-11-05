@@ -155,7 +155,7 @@ svg {
 
 .legend {
   margin: 0.375rem 0 0;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.5;
   color: var(--haze);
 }

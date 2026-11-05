@@ -116,6 +116,7 @@ export const id: Messages = {
     provisional: 'Sementara — dihitung tanpa data cuaca.',
     loadingForecast: 'Mengambil prakiraan BMKG…',
     forecastFallback: 'Skor dihitung dari polusi cahaya dan bulan saja.',
+    cloudDetail: 'Rata-rata selama jendela gelap malam ini',
   },
 
   night: {

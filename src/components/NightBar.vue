@@ -309,7 +309,7 @@ svg {
   position: relative;
   height: 1rem;
   margin-top: 0.125rem;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--haze);
 }
 
@@ -377,7 +377,7 @@ svg {
   place-items: center;
   margin: 0;
   color: var(--haze);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-style: italic;
 }
 
@@ -388,7 +388,7 @@ svg {
   margin: 0.375rem 0 0;
   padding: 0;
   list-style: none;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--haze);
 }
 

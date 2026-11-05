@@ -105,13 +105,13 @@ li {
 
 .mag {
   margin-left: auto;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--haze);
 }
 
 .facts {
   margin-top: 0.125rem;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--haze);
 }
 
@@ -121,7 +121,7 @@ li {
 
 .note {
   margin: 0.1875rem 0 0;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.4;
   color: var(--haze);
   opacity: 0.75;
@@ -129,7 +129,7 @@ li {
 
 .empty {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--haze);
 }
 </style>

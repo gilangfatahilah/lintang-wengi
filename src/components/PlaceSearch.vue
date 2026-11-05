@@ -274,7 +274,7 @@ input::-webkit-search-cancel-button {
   margin: 0.25rem 0 0;
   padding: 0.25rem 0.375rem;
   background: color-mix(in srgb, var(--panel) 94%, transparent);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.4;
   color: var(--haze);
 }
@@ -340,7 +340,7 @@ input::-webkit-search-cancel-button {
 .results li.empty {
   display: block;
   cursor: default;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--haze);
 }
 
@@ -350,7 +350,7 @@ input::-webkit-search-cancel-button {
 }
 
 .meta {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--haze);
 }
 

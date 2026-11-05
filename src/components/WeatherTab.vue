@@ -103,7 +103,7 @@ const days = computed(() =>
 .status,
 .note {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: var(--haze);
 }
@@ -120,14 +120,14 @@ const days = computed(() =>
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   white-space: nowrap;
 }
 
 th {
   padding: 0 0.5rem 0.25rem 0;
   border-bottom: var(--rule);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   text-align: left;
   color: var(--haze);

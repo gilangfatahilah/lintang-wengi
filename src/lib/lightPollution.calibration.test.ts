@@ -14,8 +14,8 @@ import { sampleMagnitude, magnitudeToBortle, type LpGrid, type LpMeta } from './
  * would have to reimplement the indexing and could drift away from production.
  *
  * To run it:
- *   1. Download https://datapub.gfz-potsdam.de/download/10.5880.GFZ.1.4.2016.001/World_Atlas_2015.zip
- *      (684 MB zipped, ~2.9 GB extracted; Falchi et al. 2016, artificial zenith
+ *   1. Download World_Atlas_2015.zip from https://doi.org/10.5880/GFZ.1.4.2016.001
+ *      into scripts/raw/ and unzip it there (684 MB zipped, ~2.9 GB extracted; Falchi et al. 2016, artificial zenith
  *      radiance in mcd/m^2 on a 30 arcsec grid)
  *   2. pip install rasterio
  *   3. python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015.tif

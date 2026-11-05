@@ -345,36 +345,45 @@ watch(fieldMode, (on) => {
   gap: 0.5rem;
 }
 
-/* Two-state segmented control; the active side borrows the field-toggle's accent. */
+/* The two settings share one tray, so the topbar reads as a single control group. */
+.controls {
+  padding: 0.1875rem;
+  border-radius: 999px;
+  background: var(--void);
+  gap: 0.125rem;
+}
+
 .lang {
   display: flex;
+  gap: 0.125rem;
 }
 
-.lang button {
-  padding: 0.375rem 0.5rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--haze);
-}
-
-.lang button.on {
-  color: var(--star);
-}
-
+.lang button,
 .field-toggle {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
   border-radius: 999px;
-  background: var(--panel-raised);
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--haze);
+}
+
+.lang button:hover,
+.field-toggle:hover {
+  color: var(--star);
+}
+
+.lang button.on {
+  background: var(--panel-raised);
+  color: var(--star);
 }
 
 /* A mode indicator, not a warning: this is the state the app is meant to be used in. */
 .field-toggle[aria-pressed="true"] {
+  background: var(--panel-raised);
   color: var(--azure);
 }
 
@@ -468,11 +477,29 @@ watch(fieldMode, (on) => {
 }
 
 .empty {
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
   padding: 1.75rem 1.25rem 1.25rem;
+  overflow-y: auto;
+}
+
+/* Kawung, very faint, so the waiting panel has a surface rather than a void. A mask
+   filled from --star, so field mode reaches it like any text. */
+.empty::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--star) 4%, transparent);
+  -webkit-mask: var(--kawung) 0 0 / 2.75rem 2.75rem repeat;
+  mask: var(--kawung) 0 0 / 2.75rem 2.75rem repeat;
+}
+
+.empty > * {
+  position: relative;
 }
 
 .empty-text {
@@ -519,21 +546,22 @@ watch(fieldMode, (on) => {
 }
 
 .rail-value {
-  font-size: 1.125rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 800;
 }
 
 .rail-star {
   margin-bottom: 0.25rem;
 }
 
-/* The empty panel's one statement, lettered like the place names it is waiting for. */
+/* The empty panel's one statement, in the weight the place names it waits for use. */
 .lede {
   margin: 0 0 0.75rem;
   font-family: var(--font-display);
-  font-size: 1.75rem;
-  font-weight: 400;
-  line-height: 1.15;
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
   text-wrap: balance;
 }
 

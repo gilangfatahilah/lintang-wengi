@@ -53,9 +53,9 @@ The app deploys as a Cloudflare Worker with static assets, not as Cloudflare Pag
 To use real data (World Atlas 2015, Falchi et al.):
 
 ```bash
-mkdir -p scripts/raw && cd scripts/raw
-curl -O https://datapub.gfz-potsdam.de/download/10.5880.GFZ.1.4.2016.001/World_Atlas_2015.zip
-unzip World_Atlas_2015.zip && cd ../..
+# Download World_Atlas_2015.zip (684 MB) from https://doi.org/10.5880/GFZ.1.4.2016.001
+# into scripts/raw/ — the DOI resolves to a landing page, not the file, so it cannot be curled.
+cd scripts/raw && unzip World_Atlas_2015.zip && cd ../..
 
 pip install rasterio    # the wheels bundle GDAL; no system GDAL needed
 python3 scripts/build_lp_grid.py --input scripts/raw/World_Atlas_2015.tif

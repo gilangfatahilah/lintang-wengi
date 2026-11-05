@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
- * The verdict and the evidence behind it: should you go tonight, and what is
- * holding it back. Moved out of SpotPanel unchanged when the panel gained tabs.
+ * The evidence behind the verdict. The verdict itself is in SpotPanel's sticky head
+ * (VerdictHeader), so it stays in view on every tab; this tab is the night bar and
+ * one row per factor, each with how far it is from ideal.
  */
-import { computed, ref, watch } from 'vue'
-import type { Forecast, LatLng, MoonConditions, NightWindow, Score } from '@/types'
+import { computed } from 'vue'
+import type { Forecast, LatLng, MoonConditions, NightWindow, Score, SubScoreKey } from '@/types'
 import { bortleText } from '@/lib/lightPollution'
-import { ratingText, limitingFactorText } from '@/lib/scoring'
+import { cloudCoverForNight } from '@/lib/scoring'
 import { useI18n } from '@/composables/useI18n'
 import { visibilityDuring } from '@/lib/visibility'
 import { MILKY_WAY_CORE } from '@/lib/skyCatalog'
@@ -37,23 +38,21 @@ const core = computed(() =>
   props.window ? visibilityDuring(MILKY_WAY_CORE, props.point, props.window) : null,
 )
 
-/**
- * Marks the moment the forecast lands.
- *
- * The rating renders immediately from light pollution and the moon, and reads
- * *higher* while it is provisional because a missing term is dropped rather than
- * guessed. When cloud cover arrives the number can therefore fall while the reader
- * is looking straight at it. Left unmarked that reads as a misread; marked, it reads
- * as an arrival. Fires only on the false-to-true edge, so re-picking a point does
- * not set it off -- the pin's own drop already acknowledges that.
- */
-const settling = ref(false)
-watch(
-  () => props.score?.complete,
-  (isComplete, was) => {
-    if (isComplete === true && was === false) settling.value = true
-  },
+/** The same average the score folds in, so the row and the rating cannot disagree. */
+const cloudCover = computed(() =>
+  props.forecast && props.window
+    ? cloudCoverForNight(props.forecast.points, props.window)
+    : null,
 )
+
+/** 0-1 per factor, for the meters; null where the factor did not enter the score. */
+function subScore(key: SubScoreKey): number | null {
+  return props.score?.subScores.find((s) => s.key === key)?.value ?? null
+}
+
+function isLimiting(key: SubScoreKey): boolean {
+  return props.score?.limitingFactor?.key === key
+}
 
 /**
  * "rises 06:41 · sets 13:58 WIB", with either half dropped when it does not happen.
@@ -74,38 +73,6 @@ const moonTimes = computed(() => {
 
 <template>
   <div class="tab">
-    <!-- The verdict, stated before the evidence. -->
-    <section
-      v-if="score"
-      class="verdict"
-      :class="{ settling }"
-      @animationend="settling = false"
-    >
-      <!-- Five stars, lit to the rating: the way an atlas grades a sky, read before
-           the number is. The number stays, small, for anyone comparing two spots. -->
-      <p class="rating" role="img" :aria-label="t('score.ratingAria', { rating: score.rating })">
-        <Icon
-          v-for="n in 5"
-          :key="n"
-          name="star"
-          :size="1"
-          class="star"
-          :class="{ lit: n <= score.rating }"
-        />
-        <span class="numeric value" aria-hidden="true">{{ score.rating }}/5</span>
-      </p>
-      <div class="verdict-text">
-        <p class="label">{{ tx(ratingText(score.rating)) }}</p>
-        <p v-if="limitingFactorText(score)" class="reason">
-          <!-- Names the culprit before the sentence does. -->
-          <Icon :name="FACTOR_ICONS[score.limitingFactor!.key]" />
-          {{ tx(limitingFactorText(score)!) }}
-        </p>
-        <p v-else-if="score.complete" class="reason good">{{ t('score.nothingLimiting') }}</p>
-        <p v-if="!score.complete" class="reason provisional">{{ t('score.provisional') }}</p>
-      </div>
-    </section>
-
     <NightBar
       v-if="window && moon"
       :window="window"
@@ -122,45 +89,77 @@ const moonTimes = computed(() => {
     </p>
 
     <dl class="readout">
-      <div class="row">
-        <dt class="label-quiet">{{ t('panel.tabs.sky') }}</dt>
-        <dd>
-          <span class="numeric strong">
-            {{ bortle !== null ? t('score.factor.darkness', { bortle }) : '—' }}
-          </span>
-          <span v-if="bortle !== null" class="detail">{{ tx(bortleText(bortle)) }}</span>
-        </dd>
+      <div class="row" :class="{ limit: isLimiting('darkness') }">
+        <span class="badge"><Icon :name="FACTOR_ICONS.darkness" :size="1.25" /></span>
+        <div class="text">
+          <dt class="label-quiet">{{ t('panel.tabs.sky') }}</dt>
+          <dd>
+            <span class="numeric strong">
+              {{ bortle !== null ? t('score.factor.darkness', { bortle }) : '—' }}
+            </span>
+            <span v-if="bortle !== null" class="detail">{{ tx(bortleText(bortle)) }}</span>
+          </dd>
+        </div>
+        <span v-if="subScore('darkness') !== null" class="meter" aria-hidden="true">
+          <i :style="{ transform: `scaleX(${subScore('darkness')})` }"></i>
+        </span>
       </div>
 
-      <div class="row">
-        <dt class="label-quiet">{{ t('moon.heading') }}</dt>
-        <dd>
-          <span class="numeric strong">
-            <MoonGlyph
-              v-if="moon"
-              :illumination="moon.illumination"
-              :phase-key="moon.phaseKey"
-              :size="1.35"
-              class="moon-glyph"
-            />
-            {{
-              moon
-                ? `${t('moon.phase.' + moon.phaseKey)} ${Math.round(moon.illumination * 100)}%`
-                : '—'
-            }}
-          </span>
-          <span v-if="moonTimes" class="detail numeric">{{ moonTimes }}</span>
-        </dd>
+      <div class="row" :class="{ limit: isLimiting('clouds') }">
+        <span class="badge"><Icon :name="FACTOR_ICONS.clouds" :size="1.25" /></span>
+        <div class="text">
+          <dt class="label-quiet">{{ t('weather.heading') }}</dt>
+          <dd>
+            <span class="numeric strong">
+              {{ cloudCover !== null ? `${Math.round(cloudCover)}%` : '—' }}
+            </span>
+            <span v-if="cloudCover !== null" class="detail">{{ t('score.cloudDetail') }}</span>
+          </dd>
+        </div>
+        <span v-if="subScore('clouds') !== null" class="meter" aria-hidden="true">
+          <i :style="{ transform: `scaleX(${subScore('clouds')})` }"></i>
+        </span>
       </div>
 
-      <div v-if="forecast" class="row">
-        <dt class="label-quiet">{{ t('weather.forecastPoint') }}</dt>
-        <dd>
-          <span class="numeric strong">{{ forecast.location.desa }}</span>
-          <span v-if="distanceKm !== null" class="detail numeric">
-            {{ t('weather.distanceAway', { km: distanceKm.toFixed(1) }) }}
-          </span>
-        </dd>
+      <div class="row" :class="{ limit: isLimiting('moon') }">
+        <span class="badge">
+          <MoonGlyph
+            v-if="moon"
+            :illumination="moon.illumination"
+            :phase-key="moon.phaseKey"
+            :size="1.25"
+          />
+          <Icon v-else :name="FACTOR_ICONS.moon" :size="1.25" />
+        </span>
+        <div class="text">
+          <dt class="label-quiet">{{ t('moon.heading') }}</dt>
+          <dd>
+            <span class="numeric strong">
+              {{
+                moon
+                  ? `${t('moon.phase.' + moon.phaseKey)} ${Math.round(moon.illumination * 100)}%`
+                  : '—'
+              }}
+            </span>
+            <span v-if="moonTimes" class="detail numeric">{{ moonTimes }}</span>
+          </dd>
+        </div>
+        <span v-if="subScore('moon') !== null" class="meter" aria-hidden="true">
+          <i :style="{ transform: `scaleX(${subScore('moon')})` }"></i>
+        </span>
+      </div>
+
+      <div v-if="forecast" class="row plain">
+        <span class="badge"><Icon name="pin" :size="1.25" /></span>
+        <div class="text">
+          <dt class="label-quiet">{{ t('weather.forecastPoint') }}</dt>
+          <dd>
+            <span class="numeric strong">{{ forecast.location.desa }}</span>
+            <span v-if="distanceKm !== null" class="detail numeric">
+              {{ t('weather.distanceAway', { km: distanceKm.toFixed(1) }) }}
+            </span>
+          </dd>
+        </div>
       </div>
     </dl>
   </div>
@@ -173,95 +172,9 @@ const moonTimes = computed(() => {
   gap: 1.25rem;
 }
 
-.verdict {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding-bottom: 1.25rem;
-  border-bottom: var(--rule-section);
-}
-
-/* Transform and opacity only. Flashing the background would animate a token, and
-   field mode exists precisely so that nothing changes colour unasked. */
-.verdict.settling {
-  animation: verdict-settle 180ms ease-out;
-}
-
-@keyframes verdict-settle {
-  from {
-    opacity: 0.5;
-    transform: translateY(-3px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.rating {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin: 0;
-  font-size: 1.625rem;
-  line-height: 1;
-}
-
-/* Unlit stars are the same glyph, faint -- not a second outline drawing, which at
-   this size would read as a different shape rather than an absent one. */
-.star {
-  color: var(--star);
-  opacity: 0.18;
-}
-
-.star.lit {
-  opacity: 1;
-}
-
-.value {
-  margin-left: 0.5rem;
-  font-size: 0.8125rem;
-  color: var(--haze);
-}
-
-.verdict-text {
-  min-width: 0;
-}
-
-.label {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.375rem;
-  font-weight: 500;
-  line-height: 1.2;
-}
-
-.reason {
-  margin: 0.25rem 0 0;
-  font-size: 0.875rem;
-  color: var(--haze);
-}
-
-.reason .icon {
-  margin-right: 0.25rem;
-  color: var(--ember);
-}
-
-.moon-glyph {
-  margin-right: 0.375rem;
-}
-
-.reason.good {
-  color: var(--clear);
-}
-
-.reason.provisional {
-  color: var(--ember);
-}
-
 .status {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--haze);
 }
 
@@ -277,38 +190,86 @@ const moonTimes = computed(() => {
 .readout {
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
+  gap: 0.5rem;
   margin: 0;
-  padding-top: 1.25rem;
-  border-top: var(--rule-section);
 }
 
+/* One factor per row: glyph, reading, and a meter for how close it is to ideal. */
 .row {
   display: grid;
-  grid-template-columns: 6.5rem 1fr;
+  grid-template-columns: 2.5rem minmax(0, 1fr) 3.5rem;
+  align-items: center;
   gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: var(--panel-raised);
 }
 
-.row dt {
-  padding-top: 0.0625rem;
+.row.plain {
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  background: none;
+  padding-block: 0.25rem;
 }
 
-.row dd {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  margin: 0;
+/* The limiting factor carries the warning colour on its outline, glyph and meter, the
+   same row the verdict's chip names. */
+.row.limit {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ember) 55%, transparent);
+}
+
+.badge {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.625rem;
+  background: var(--void);
+  font-size: 1rem;
+  color: var(--star);
+}
+
+.row.limit .badge {
+  color: var(--ember);
+}
+
+.text {
   min-width: 0;
 }
 
+.text dd {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  margin: 0;
+}
+
 .strong {
-  font-size: 0.9375rem;
-  font-weight: 500;
+  font-size: 1.0625rem;
+  font-weight: 700;
 }
 
 .detail {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.4;
   color: var(--haze);
+}
+
+.meter {
+  height: 0.375rem;
+  border-radius: 0.1875rem;
+  background: var(--void);
+  overflow: hidden;
+}
+
+/* Scaled rather than sized so it never animates a layout property. */
+.meter i {
+  display: block;
+  height: 100%;
+  background: var(--clear);
+  transform-origin: left;
+}
+
+.row.limit .meter i {
+  background: var(--ember);
 }
 </style>

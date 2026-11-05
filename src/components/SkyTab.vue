@@ -206,8 +206,8 @@ h4 {
 .verdict {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 0.9375rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 .milkyway[data-verdict='baik'] .verdict {
@@ -226,7 +226,7 @@ h4 {
   flex-direction: column;
   gap: 0.125rem;
   margin: 0.625rem 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .facts > div {
@@ -245,7 +245,7 @@ h4 {
 
 .lede {
   margin: 0 0 0.75rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
   color: var(--haze);
 }
@@ -287,13 +287,13 @@ h4 {
 }
 
 .when {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--star);
 }
 
 .detail {
   margin: 0.125rem 0 0;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   color: var(--haze);
 }
 
@@ -303,7 +303,7 @@ h4 {
 
 .fine {
   margin: 0.375rem 0 0;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.5;
   color: var(--haze);
   opacity: 0.75;

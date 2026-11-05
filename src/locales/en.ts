@@ -112,6 +112,7 @@ export const en = {
     provisional: 'Provisional — calculated without weather data.',
     loadingForecast: 'Fetching the BMKG forecast…',
     forecastFallback: 'Scored from light pollution and the moon only.',
+    cloudDetail: 'Average across tonight\u2019s dark window',
   },
 
   night: {
