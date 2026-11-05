@@ -60,12 +60,16 @@ export type IconName =
   | 'close'
   | 'layers'
   | 'torch'
-  | 'collapse'
-  | 'expand'
-  | 'restore'
+  | 'panelRail'
+  | 'panelSplit'
+  | 'panelFull'
 
 /** Shorthand for the stroked parts of otherwise-filled glyphs. */
 const S = 'fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"'
+
+/** The window outline shared by the three panel-layout glyphs. */
+const FRAME =
+  '<path fill-rule="evenodd" d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 2v12h16V6z"/>'
 
 /**
  * A cloud with a flat base, built from three circles and a rectangle whose bottoms
@@ -251,31 +255,32 @@ export const ICONS: Record<IconName, string> = {
     `<g ${S} stroke-width="1.8" opacity="0.75"><path d="M12 2.2v3.6M5.6 3.8l1.8 2.6M18.4 3.8l-1.8 2.6"/></g>`,
 
   /*
-   * The panel controls read as what happens to the panel, not as generic window
-   * chrome: the filled bar is the edge the panel lives against, and the arrow says
-   * which way the panel moves. Named for what they *draw* rather than for the action
-   * they trigger, because naming them `minimize`/`maximize` is exactly how they
-   * ended up pointing the wrong way -- collapsing a right-hand panel moves it
-   * toward the right edge, not away from it.
+   * The panel controls are pictures of the layout they produce: the frame is the
+   * window, the solid block is the panel, and its width is the whole difference
+   * between the three. An earlier set (a chevron against a bar) read as media
+   * transport, |< and >|, because that is the only place most people have seen
+   * that shape. A diagram of the result cannot be misread as a direction.
    *
-   * Drawn for the `beside` case and rotated a quarter turn when the panel is below.
-   * That rotation is why the arrows lost their shafts: a shaft running into a bar is
-   * the download glyph, and a quarter turn put it exactly there -- one control read
-   * as "download", the one beside it as "upload". A chevron against the same bar
-   * says the same thing about the panel and collides with nothing.
+   * Named for what they draw, not for the action they trigger: which one "restores"
+   * depends on where you are standing, and naming by action is how the old set ended
+   * up pointing the wrong way. Drawn for the `beside` case; a quarter turn puts the
+   * panel at the bottom for the stacked layout, and a portrait frame is the right
+   * picture of a phone anyway.
+   *
+   * The frame is cut with evenodd so the panel shows through it, and the 2-unit gap
+   * between frame and block is the smallest that survives 17px.
    */
-  collapse:
-    '<rect x="17.4" y="3" width="3.6" height="18" rx="0.6"/>' +
-    `<g ${S} stroke-width="2.2"><path d="M6.2 5.6 12.6 12l-6.4 6.4"/></g>`,
+  panelRail:
+    FRAME +
+    '<rect x="15.4" y="8" width="2.6" height="8" rx="0.5"/>',
 
-  expand:
-    '<rect x="17.4" y="3" width="3.6" height="18" rx="0.6"/>' +
-    `<g ${S} stroke-width="2.2"><path d="M12.6 5.6 6.2 12l6.4 6.4"/></g>`,
+  panelSplit:
+    FRAME +
+    '<rect x="12" y="8" width="6" height="8" rx="0.5"/>',
 
-  restore:
-    '<rect x="3" y="3" width="3.6" height="18" rx="0.6"/>' +
-    '<rect x="17.4" y="3" width="3.6" height="18" rx="0.6"/>' +
-    `<g ${S} stroke-width="1.9"><path d="M9.6 12h4.8"/></g>`,
+  panelFull:
+    FRAME +
+    '<rect x="6" y="8" width="12" height="8" rx="0.5"/>',
 }
 
 /*

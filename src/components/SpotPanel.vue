@@ -37,7 +37,7 @@ const props = defineProps<{
   panelPlacement: PanelPlacement
 }>()
 
-defineEmits<{ minimize: []; maximize: [] }>()
+defineEmits<{ minimize: []; restore: []; maximize: [] }>()
 
 type TabKey = 'skor' | 'langit' | 'cuaca'
 
@@ -87,6 +87,7 @@ const placeName = computed(() => {
           :state="panelState"
           :placement="panelPlacement"
           @minimize="$emit('minimize')"
+          @restore="$emit('restore')"
           @maximize="$emit('maximize')"
         />
       </header>

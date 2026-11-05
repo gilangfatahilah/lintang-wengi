@@ -256,7 +256,7 @@ watch(fieldMode, (on) => {
           :title="t('panel.restore')"
           @click="panelRestore"
         >
-          <Icon name="expand" :size="1.2" />
+          <Icon name="panelSplit" :size="1.25" />
         </button>
         <p
           v-if="score"
@@ -285,23 +285,28 @@ watch(fieldMode, (on) => {
           :panel-state="panelState"
           :panel-placement="panelPlacement"
           @minimize="panelMinimize"
+          @restore="panelRestore"
           @maximize="panelMaximize"
         />
         <!-- Carries the same controls as SpotPanel. Without them, maximizing before
              picking a point hid the map behind a panel with no way to shrink, and
              the state outlived a reload. -->
         <aside v-else class="empty">
+          <!-- First in source so it can float: only the heading wraps around it, and
+               the moon card below keeps the panel's full width. -->
+          <PanelControls
+            class="empty-controls"
+            :state="panelState"
+            :placement="panelPlacement"
+            @minimize="panelMinimize"
+            @restore="panelRestore"
+            @maximize="panelMaximize"
+          />
           <div class="empty-text">
             <p class="lede">{{ t('app.tagline') }}</p>
             <p class="sub">{{ t('app.intro') }}</p>
             <MoonTonight />
           </div>
-          <PanelControls
-            :state="panelState"
-            :placement="panelPlacement"
-            @minimize="panelMinimize"
-            @maximize="panelMaximize"
-          />
         </aside>
       </template>
     </main>
@@ -482,10 +487,6 @@ watch(fieldMode, (on) => {
 
 .empty {
   position: relative;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
   padding: 1.75rem 1.25rem 1.25rem;
   overflow-y: auto;
 }
@@ -505,6 +506,14 @@ watch(fieldMode, (on) => {
 
 .empty > * {
   position: relative;
+}
+
+/* Raised, because the text after it is also positioned and its box spans the float:
+   without this the heading's box swallowed every click on the strip. */
+.empty-controls {
+  z-index: 1;
+  float: right;
+  margin: -0.25rem 0 0.75rem 0.75rem;
 }
 
 .empty-text {
@@ -529,15 +538,22 @@ watch(fieldMode, (on) => {
 
 .rail-restore {
   display: flex;
-  padding: 0.25rem;
+  align-items: center;
+  justify-content: center;
+  /* The rail's full width, so the one control in it is a 44px target. */
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: -0.5rem;
+  border-radius: 0.5625rem;
   color: var(--haze);
 }
 
 .rail-restore:hover {
-  color: var(--accent);
+  background: var(--panel-raised);
+  color: var(--star);
 }
 
-/* Stacked, the panel reopens upward, so the arrow has to say so. */
+/* Stacked, the panel sits below the map, so the picture turns to put it there. */
 .rail-restore.stacked .icon {
   transform: rotate(90deg);
 }

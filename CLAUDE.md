@@ -162,7 +162,7 @@ Three things that will bite:
 
 **Do not use `:global(...)` as the first compound selector in a scoped block.** `:global(.body[data-placement='below']) .window-controls .icon { transform: rotate(90deg) }` compiled to a rule matching `.body` itself and rotated the entire application ninety degrees on narrow screens — a total layout failure that `pnpm build` and every unit test passed straight through. Pass the state down as a prop and put the class where it belongs.
 
-The collapse and expand glyphs are named for **what they draw**, not for the action they trigger. Naming them `minimize`/`maximize` is precisely how they ended up pointing the wrong way: collapsing a right-hand panel moves it *toward* the right edge, not away from it.
+The panel controls are a three-way layout picker (`PanelControls.vue`): rail, split, full, drawn as pictures of the result, with the current one as a raised fill like the active tab. The glyphs (`panelRail`/`panelSplit`/`panelFull`) are named for **what they draw**, not for the action they trigger. An earlier pair named `minimize`/`maximize` ended up pointing the wrong way, and its successor, a chevron against a bar, read as media skip buttons. In the empty state the picker floats so only the heading wraps around it; it carries `z-index: 1` because the positioned text after it otherwise covers it and swallows every click.
 
 <!-- antislop:start -->
 ## antislop

@@ -88,6 +88,7 @@ export const id: Messages = {
     savedForecast: 'Prakiraan tersimpan dari {time}. BMKG tidak dapat dihubungi.',
     lpStub: 'Polusi cahaya: data sementara, belum dikalibrasi.',
     lpReal: 'Polusi cahaya: World Atlas 2015 — Falchi dkk.',
+    layoutLabel: 'Tata letak panel',
     minimize: 'Ciutkan panel',
     maximize: 'Penuhi layar',
     restore: 'Kembalikan panel',
